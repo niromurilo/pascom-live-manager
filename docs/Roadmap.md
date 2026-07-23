@@ -4,6 +4,15 @@ v0.1 ✅ MVP
 ✔ Atualizar fontes OBS
 
 v0.2
+## Sprint 5
+
+Interface gráfica
+
+□ Tela principal
+□ Preparar transmissão
+□ Abrir pasta output
+□ Guia operacional
+
 □ Interface gráfica
 □ Configurações
 □ Logs
