@@ -10,7 +10,7 @@ from datetime import date
 from pathlib import Path
 
 from animated_lower_thirds import criar_lowers_da_liturgia, gerar_e_validar_json_dos_lowers, montar_resumo_dos_lowers
-from buscar_liturgia import URL_LITURGIA, buscar_liturgia_ou_none
+from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 from config import NOME_PAROQUIA
 from gerador_descricao import gerar_descricao, gerar_titulo, salvar_texto
 
@@ -42,9 +42,11 @@ def main() -> None:
 
     hoje = date.today()
 
-    liturgia = buscar_liturgia_ou_none(URL_LITURGIA)
-    if liturgia is None:
+    resultado_busca = buscar_liturgia(URL_LITURGIA)
+    if not resultado_busca.sucesso:
+        print(f"❌ {resultado_busca.mensagem}")
         return
+    liturgia = resultado_busca.liturgia
 
     caminho_json = args.pasta_saida / NOME_ARQUIVO_JSON
     lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante)

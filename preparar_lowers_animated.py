@@ -6,11 +6,7 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 CAMINHO_PADRAO_SAIDA = Path("output/animated_lower_thirds_liturgia.json")
-from buscar_liturgia import (
-    URL_LITURGIA,
-    LiturgiaDoDia,
-    buscar_liturgia_ou_none
-)
+from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 
 from animated_lower_thirds import (
     LowerThird,
@@ -40,9 +36,11 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
 
-    liturgia = buscar_liturgia_ou_none(URL_LITURGIA)
-    if liturgia is None:
+    resultado_busca = buscar_liturgia(URL_LITURGIA)
+    if not resultado_busca.sucesso:
+        print(f"❌ {resultado_busca.mensagem}")
         return
+    liturgia = resultado_busca.liturgia
 
     lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante)
 
