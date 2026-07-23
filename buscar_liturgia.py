@@ -10,6 +10,7 @@ from dataclasses import dataclass
 
 import requests
 from bs4 import BeautifulSoup, Tag
+from resultado import Resultado
 
 URL_LITURGIA = "https://liturgia.cancaonova.com/pb/"
 
@@ -23,6 +24,12 @@ class LiturgiaDoDia:
     salmo: str
     evangelho: str
     leitura2: str | None = None
+
+@dataclass(frozen=True)
+class ResultadoBusca(Resultado):
+    """Resultado de buscar e extrair a liturgia do dia."""
+
+    liturgia: LiturgiaDoDia | None = None
 
 
 def buscar_html_da_liturgia(url: str) -> str:
@@ -121,22 +128,29 @@ def extrair_citacao_do_salmo(texto: str) -> str:
     primeira_linha = _primeira_linha(texto)
     return primeira_linha.replace("Responsorio", "").replace("Responsório", "").strip()
 
-def buscar_liturgia_ou_none(url: str) -> LiturgiaDoDia | None:
-    """Busca e extrai a liturgia, imprimindo mensagem amigável em caso de erro.
+def buscar_liturgia(url: str) -> ResultadoBusca:
+    """Busca e extrai a liturgia do dia.
 
-    Retorna None se falhar — quem chama decide o que fazer a seguir
-    (normalmente, interromper o fluxo com return).
+    Não imprime nada — quem chama decide como exibir o resultado
+    (CLI imprime, GUI mostra na tela).
     """
     try:
         html = buscar_html_da_liturgia(url)
-        return extrair_liturgia(html)
+        liturgia = extrair_liturgia(html)
+        return ResultadoBusca(sucesso=True, mensagem="Liturgia buscada com sucesso.", liturgia=liturgia)
     except requests.exceptions.RequestException as erro:
-        print(f"❌ Não consegui buscar a liturgia (problema de conexão): {erro}")
-        return None
+        return ResultadoBusca(
+            sucesso=False,
+            mensagem=f"Não consegui buscar a liturgia (problema de conexão): {erro}",
+        )
     except ValueError as erro:
-        print(f"❌ A página da liturgia mudou de estrutura e a extração falhou: {erro}")
-        print("   Avise quem cuida do projeto — provavelmente precisa ajustar o scraping.")
-        return None
+        return ResultadoBusca(
+            sucesso=False,
+            mensagem=(
+                f"A página da liturgia mudou de estrutura e a extração falhou: {erro}\n"
+                "Avise quem cuida do projeto — provavelmente precisa ajustar o scraping."
+            ),
+        )
 
 if __name__ == "__main__":
     main()
