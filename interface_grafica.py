@@ -8,6 +8,7 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
 
 from config import NOME_PAROQUIA
 from services.preparacao import PASTA_SAIDA_PADRAO
@@ -24,10 +25,19 @@ class JanelaPrincipal(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
-
         self._configurar_janela()
         self._criar_variaveis()
         self._criar_widgets()
+
+    def preparar_transmissao(self) -> None:
+        """Ação temporária do botão principal."""
+
+        messagebox.showinfo(
+        title="Pascom Live Manager",
+        message="Ainda não implementado.",
+        )
+    
+
 
     def _configurar_janela(self) -> None:
         """Configura propriedades gerais da janela."""
@@ -117,6 +127,20 @@ class JanelaPrincipal(tk.Tk):
             column=1,
             sticky="ew",
             pady=(0, 12),
+        )
+        self.botao_preparar = ttk.Button(
+        self,
+        text="Preparar transmissão",
+        command=self.preparar_transmissao,
+        )
+
+        self.botao_preparar.grid(
+        row=6,
+        column=0,
+        columnspan=2,
+        padx=20,
+        pady=(20, 0),
+        sticky="ew",
         )
 
 
