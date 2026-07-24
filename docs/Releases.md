@@ -2,11 +2,26 @@
 
 ## v0.1
 
-Primeira versão funcional.
+Primeiro MVP funcional.
+
+Inclui:
+
+- Busca da liturgia
+- Geração do JSON do Animated Lower Thirds
+- Geração automática do título
+- Geração automática da descrição
+- Geração do resumo
+- Configuração por .env
+
+---
 
 ## v0.2
 
-Integração com YouTube.
+Interface gráfica.
+
+(em desenvolvimento)
+
+---
 
 ## v1.0
 
