@@ -5,51 +5,62 @@ Interface gráfica principal.
 
 from __future__ import annotations
 
-from pathlib import Path
 import tkinter as tk
-from tkinter import ttk
 from tkinter import messagebox
+from tkinter import ttk
 
 from config import NOME_PAROQUIA
-from services.preparacao import PASTA_SAIDA_PADRAO
-
+from services.preparacao import (
+    PASTA_SAIDA_PADRAO,
+    executar_preparacao,
+)
 
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
 ALTURA = 420
-PADDING = 16
 
 
 class JanelaPrincipal(tk.Tk):
-    """Janela principal da aplicação."""
+    """Janela principal."""
 
     def __init__(self) -> None:
         super().__init__()
+
         self._configurar_janela()
         self._criar_variaveis()
         self._criar_widgets()
 
     def preparar_transmissao(self) -> None:
-        """Ação temporária do botão principal."""
+        """Executa a preparação da transmissão."""
 
-        messagebox.showinfo(
-        title="Pascom Live Manager",
-        message="Ainda não implementado.",
+        nome_paroquia = self.paroquia_var.get().strip()
+        celebrante = self.celebrante_var.get().strip() or None
+
+        resultado = executar_preparacao(
+            nome_paroquia=nome_paroquia,
+            celebrante=celebrante,
         )
-    
 
+        if resultado.sucesso:
+            messagebox.showinfo(
+                "Pascom Live Manager",
+                resultado.mensagem,
+            )
+        else:
+            messagebox.showerror(
+                "Erro",
+                resultado.mensagem,
+            )
 
     def _configurar_janela(self) -> None:
-        """Configura propriedades gerais da janela."""
+        """Configura a janela."""
 
         self.title(TITULO_JANELA)
         self.geometry(f"{LARGURA}x{ALTURA}")
         self.minsize(LARGURA, ALTURA)
 
-        self.columnconfigure(1, weight=1)
-
     def _criar_variaveis(self) -> None:
-        """Cria as variáveis ligadas aos campos da interface."""
+        """Cria as variáveis."""
 
         self.celebrante_var = tk.StringVar()
 
@@ -62,16 +73,29 @@ class JanelaPrincipal(tk.Tk):
         )
 
     def _criar_widgets(self) -> None:
-        """Cria todos os widgets da janela."""
+        """Cria os componentes da tela."""
 
-        frame = ttk.Frame(self, padding=PADDING)
-        frame.grid(sticky="nsew")
+        self.frame = ttk.Frame(
+            self,
+            padding=20,
+        )
 
-        frame.columnconfigure(1, weight=1)
+        self.frame.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+        )
+
+        self.frame.columnconfigure(
+            1,
+            weight=1,
+        )
+
+        # Celebrante
 
         ttk.Label(
-            frame,
-            text="Celebrante:"
+            self.frame,
+            text="Celebrante:",
         ).grid(
             row=0,
             column=0,
@@ -80,7 +104,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         ttk.Entry(
-            frame,
+            self.frame,
             textvariable=self.celebrante_var,
         ).grid(
             row=0,
@@ -89,9 +113,11 @@ class JanelaPrincipal(tk.Tk):
             pady=(0, 12),
         )
 
+        # Paróquia
+
         ttk.Label(
-            frame,
-            text="Paróquia:"
+            self.frame,
+            text="Paróquia:",
         ).grid(
             row=1,
             column=0,
@@ -100,7 +126,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         ttk.Entry(
-            frame,
+            self.frame,
             textvariable=self.paroquia_var,
         ).grid(
             row=1,
@@ -109,9 +135,11 @@ class JanelaPrincipal(tk.Tk):
             pady=(0, 12),
         )
 
+        # Pasta
+
         ttk.Label(
-            frame,
-            text="Pasta de saída:"
+            self.frame,
+            text="Pasta de saída:",
         ).grid(
             row=2,
             column=0,
@@ -120,7 +148,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         ttk.Entry(
-            frame,
+            self.frame,
             textvariable=self.pasta_saida_var,
         ).grid(
             row=2,
@@ -128,24 +156,26 @@ class JanelaPrincipal(tk.Tk):
             sticky="ew",
             pady=(0, 12),
         )
-        self.botao_preparar = ttk.Button(
-        self,
-        text="Preparar transmissão",
-        command=self.preparar_transmissao,
+
+        # Botão
+
+        self.btn_preparar = ttk.Button(
+            self.frame,
+            text="Preparar transmissão",
+            command=self.preparar_transmissao,
         )
 
-        self.botao_preparar.grid(
-        row=6,
-        column=0,
-        columnspan=2,
-        padx=20,
-        pady=(20, 0),
-        sticky="ew",
+        self.btn_preparar.grid(
+            row=3,
+            column=0,
+            columnspan=2,
+            sticky="ew",
+            pady=(20, 0),
         )
 
 
 def main() -> None:
-    """Ponto de entrada da interface."""
+    """Ponto de entrada."""
 
     app = JanelaPrincipal()
     app.mainloop()
