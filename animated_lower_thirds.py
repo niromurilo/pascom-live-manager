@@ -8,7 +8,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-
+from resultado import Resultado
 from buscar_liturgia import (
     LiturgiaDoDia,
     extrair_citacao,
@@ -187,20 +187,19 @@ def validar_configuracao_gerada(lowers: list[LowerThird], caminho: Path) -> None
         if not dados.get(chave_info):
             raise ValueError(f"Campo '{chave_info}' ficou vazio no JSON gerado ({lower.nome}).")
         
-def gerar_e_validar_json_dos_lowers(lowers: list[LowerThird], caminho: Path) -> bool:
-    """Salva e valida o JSON dos lowers, imprimindo mensagem amigável em caso de erro.
+def gerar_e_validar_json_dos_lowers(lowers: list[LowerThird], caminho: Path) -> Resultado:
+    """Salva e valida o JSON dos lowers.
 
-    Retorna True se tudo correu bem, False se falhou — quem chama decide
-    o que fazer a seguir.
+    Não imprime nada — quem chama decide como exibir o resultado
+    (CLI imprime, GUI mostra na tela).
     """
     try:
         dados = gerar_configuracao_importacao(lowers)
         salvar_configuracao_importacao(dados, caminho)
         validar_configuracao_gerada(lowers, caminho)
-        return True
+        return Resultado(sucesso=True, mensagem="JSON gerado e validado com sucesso!")
     except (OSError, ValueError) as erro:
-        print(f"❌ Problema ao gerar o arquivo: {erro}")
-        return False
+        return Resultado(sucesso=False, mensagem=f"Problema ao gerar o arquivo: {erro}")
 
 
 def montar_resumo_dos_lowers(liturgia: LiturgiaDoDia, lowers: list[LowerThird], caminho: Path) -> str:
