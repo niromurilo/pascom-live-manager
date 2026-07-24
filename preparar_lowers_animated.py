@@ -44,10 +44,12 @@ def main() -> None:
 
     lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante)
 
-    if not gerar_e_validar_json_dos_lowers(lowers, args.saida):
+    resultado_json = gerar_e_validar_json_dos_lowers(lowers, args.saida)
+    if not resultado_json.sucesso:
+        print(f"❌ {resultado_json.mensagem}")
         return
 
-    print("✅ JSON gerado e validado com sucesso!\n")
+    print(f"✅ {resultado_json.mensagem}\n")
     print(montar_resumo_dos_lowers(liturgia, lowers, args.saida))
     print("\n➡️  Abra o painel do Animated Lower Thirds no OBS e clique em Import.")
 
