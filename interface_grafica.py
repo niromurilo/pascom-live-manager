@@ -42,15 +42,37 @@ class JanelaPrincipal(tk.Tk):
         )
 
         if resultado.sucesso:
+            self.atualizar_saida(resultado.relatorio or "")
+
             messagebox.showinfo(
                 "Pascom Live Manager",
                 resultado.mensagem,
             )
+
         else:
+            self.atualizar_saida("")
+
             messagebox.showerror(
                 "Erro",
                 resultado.mensagem,
             )
+
+    def atualizar_saida(self, texto: str) -> None:
+        """Atualiza a área de saída."""
+
+        self.texto_saida.config(state="normal")
+
+        self.texto_saida.delete(
+            "1.0",
+            tk.END,
+        )
+
+        self.texto_saida.insert(
+            tk.END,
+            texto,
+        )
+
+        self.texto_saida.config(state="disabled")
 
     def _configurar_janela(self) -> None:
         """Configura a janela."""
@@ -90,6 +112,7 @@ class JanelaPrincipal(tk.Tk):
             1,
             weight=1,
         )
+        self.frame.rowconfigure(4, weight=1)
 
         # Celebrante
 
@@ -172,7 +195,23 @@ class JanelaPrincipal(tk.Tk):
             sticky="ew",
             pady=(20, 0),
         )
+        # Área de saída
 
+        self.texto_saida = tk.Text(
+            self.frame,
+            height=12,
+            wrap="word",
+        )
+
+        self.texto_saida.grid(
+            row=4,
+            column=0,
+            columnspan=2,
+            sticky="nsew",
+            pady=(20, 0),
+        )
+
+        self.texto_saida.config(state="disabled")
 
 def main() -> None:
     """Ponto de entrada."""
