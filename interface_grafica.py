@@ -7,7 +7,7 @@ from __future__ import annotations
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
-
+import os
 from config import NOME_PAROQUIA
 from services.preparacao import (
     PASTA_SAIDA_PADRAO,
@@ -67,6 +67,20 @@ class JanelaPrincipal(tk.Tk):
         if pasta:
             self.pasta_saida_var.set(pasta)
 
+    def abrir_pasta_saida(self) -> None:
+        """Abre a pasta onde os arquivos são gerados."""
+
+        pasta = Path(self.pasta_saida_var.get())
+
+        if not pasta.exists():
+            messagebox.showwarning(
+                "Pasta inexistente",
+                "A pasta de saída ainda não existe.",
+            )
+            return
+
+        os.startfile(pasta)
+
     def atualizar_saida(self, texto: str) -> None:
         """Atualiza a área de saída."""
 
@@ -120,8 +134,7 @@ class JanelaPrincipal(tk.Tk):
 
         self.frame.columnconfigure(1, weight=1)
         self.frame.columnconfigure(2, weight=0)
-        self.frame.columnconfigure(2, weight=0)
-        self.frame.rowconfigure(4, weight=1)
+        self.frame.rowconfigure(5, weight=1)
 
         # Celebrante
 
@@ -217,6 +230,19 @@ class JanelaPrincipal(tk.Tk):
             sticky="ew",
             pady=(20, 0),
         )
+        #botão abrir pasta
+        self.btn_abrir_pasta = ttk.Button(
+            self.frame,
+            text="Abrir pasta",
+            command=self.abrir_pasta_saida,
+        )
+        self.btn_abrir_pasta.grid(
+            row=4,
+            column=0,
+            columnspan=3,
+            sticky="ew",
+            pady=(8, 12),
+        )
         # Área de saída
 
         self.texto_saida = tk.Text(
@@ -236,7 +262,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         self.texto_saida.grid(
-            row=4,
+            row=5,
             column=0,
             columnspan=2,
             sticky="nsew",
@@ -244,7 +270,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         self.scroll_saida.grid(
-            row=4,
+            row=5,
             column=2,
             sticky="ns",
             pady=(20, 0),
