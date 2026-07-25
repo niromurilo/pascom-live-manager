@@ -16,7 +16,7 @@ from services.preparacao import (
 
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
-ALTURA = 420
+ALTURA = 550
 
 
 class JanelaPrincipal(tk.Tk):
@@ -125,21 +125,47 @@ class JanelaPrincipal(tk.Tk):
             self,
             padding=20,
         )
-
         self.frame.grid(
             row=0,
             column=0,
             sticky="nsew",
         )
 
-        self.frame.columnconfigure(1, weight=1)
-        self.frame.columnconfigure(2, weight=0)
-        self.frame.rowconfigure(5, weight=1)
+        self.frame_config = ttk.LabelFrame(
+            self.frame,
+            text=" Configurações da transmissão ",
+            padding=15,
+        )
+        self.frame_relatorio = ttk.LabelFrame(
+            self.frame,
+            text=" Relatório ",
+            padding=10,
+        )
+
+        self.frame_config.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+        )
+        self.frame_relatorio.grid(
+            row=1,
+            column=0,
+            sticky="nsew",
+            pady=(15, 0),
+        )
+
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.rowconfigure(1, weight=1)
+
+        self.frame_config.columnconfigure(1, weight=1)
+
+        self.frame_relatorio.columnconfigure(0, weight=1)
+        self.frame_relatorio.rowconfigure(0, weight=1)
 
         # Celebrante
 
         ttk.Label(
-            self.frame,
+            self.frame_config,
             text="Celebrante:",
         ).grid(
             row=0,
@@ -149,7 +175,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         ttk.Entry(
-            self.frame,
+            self.frame_config,
             textvariable=self.celebrante_var,
         ).grid(
             row=0,
@@ -161,7 +187,7 @@ class JanelaPrincipal(tk.Tk):
         # Paróquia
 
         ttk.Label(
-            self.frame,
+            self.frame_config,
             text="Paróquia:",
         ).grid(
             row=1,
@@ -171,7 +197,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         ttk.Entry(
-            self.frame,
+            self.frame_config,
             textvariable=self.paroquia_var,
         ).grid(
             row=1,
@@ -183,7 +209,7 @@ class JanelaPrincipal(tk.Tk):
         # Pasta
 
         ttk.Label(
-            self.frame,
+            self.frame_config,
             text="Pasta de saída:",
         ).grid(
             row=2,
@@ -193,7 +219,7 @@ class JanelaPrincipal(tk.Tk):
         )
 
         self.entry_pasta_saida = ttk.Entry(
-            self.frame,
+            self.frame_config,
             textvariable=self.pasta_saida_var,
         )
 
@@ -204,7 +230,7 @@ class JanelaPrincipal(tk.Tk):
             pady=(0, 12),
         )
         self.btn_procurar = ttk.Button(
-            self.frame,
+            self.frame_config,
             text="Procurar...",
             command=self.escolher_pasta_saida,
         )
@@ -218,7 +244,7 @@ class JanelaPrincipal(tk.Tk):
         # Botão
 
         self.btn_preparar = ttk.Button(
-            self.frame,
+            self.frame_config,
             text="Preparar transmissão",
             command=self.preparar_transmissao,
         )
@@ -226,54 +252,52 @@ class JanelaPrincipal(tk.Tk):
         self.btn_preparar.grid(
             row=3,
             column=0,
-            columnspan=3,
+            columnspan=1,
             sticky="ew",
-            pady=(20, 0),
+            padx=(0,5),
         )
         #botão abrir pasta
         self.btn_abrir_pasta = ttk.Button(
-            self.frame,
+            self.frame_config,
             text="Abrir pasta",
             command=self.abrir_pasta_saida,
         )
         self.btn_abrir_pasta.grid(
-            row=4,
-            column=0,
-            columnspan=3,
+            row=3,
+            column=1,
+            columnspan=2,
             sticky="ew",
-            pady=(8, 12),
+            padx=(5,0),
         )
         # Área de saída
 
         self.texto_saida = tk.Text(
-            self.frame,
+            self.frame_relatorio,
             height=12,
             wrap="word",
         )
 
         self.scroll_saida = ttk.Scrollbar(
-            self.frame,
+            self.frame_relatorio,
             orient="vertical",
             command=self.texto_saida.yview,
         )
 
         self.texto_saida.configure(
-            yscrollcommand=self.scroll_saida.set,
+            state="disabled",
+            font=("Consolas", 10),
         )
 
         self.texto_saida.grid(
-            row=5,
+            row=0,
             column=0,
-            columnspan=2,
             sticky="nsew",
-            pady=(20, 0),
         )
 
         self.scroll_saida.grid(
-            row=5,
-            column=2,
-            sticky="ns",
-            pady=(20, 0),
+            row=0,
+            column=1,
+            sticky="nsew"
         )
 
         self.texto_saida.config(state="disabled")
