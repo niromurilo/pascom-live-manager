@@ -4,10 +4,9 @@ Interface gráfica principal.
 """
 
 from __future__ import annotations
-
+from pathlib import Path
 import tkinter as tk
-from tkinter import messagebox
-from tkinter import ttk
+from tkinter import filedialog, messagebox, ttk
 
 from config import NOME_PAROQUIA
 from services.preparacao import (
@@ -39,6 +38,7 @@ class JanelaPrincipal(tk.Tk):
         resultado = executar_preparacao(
             nome_paroquia=nome_paroquia,
             celebrante=celebrante,
+            pasta_saida=Path(self.pasta_saida_var.get()),
         )
 
         if resultado.sucesso:
@@ -56,6 +56,16 @@ class JanelaPrincipal(tk.Tk):
                 "Erro",
                 resultado.mensagem,
             )
+    def escolher_pasta_saida(self) -> None:
+        """Permite escolher a pasta onde os arquivos serão gerados."""
+
+        pasta = filedialog.askdirectory(
+            title="Escolha a pasta de saída",
+            initialdir=self.pasta_saida_var.get(),
+        )
+
+        if pasta:
+            self.pasta_saida_var.set(pasta)
 
     def atualizar_saida(self, texto: str) -> None:
         """Atualiza a área de saída."""
@@ -108,10 +118,9 @@ class JanelaPrincipal(tk.Tk):
             sticky="nsew",
         )
 
-        self.frame.columnconfigure(
-            1,
-            weight=1,
-        )
+        self.frame.columnconfigure(1, weight=1)
+        self.frame.columnconfigure(2, weight=0)
+        self.frame.columnconfigure(2, weight=0)
         self.frame.rowconfigure(4, weight=1)
 
         # Celebrante
@@ -170,16 +179,29 @@ class JanelaPrincipal(tk.Tk):
             pady=(0, 6),
         )
 
-        ttk.Entry(
+        self.entry_pasta_saida = ttk.Entry(
             self.frame,
             textvariable=self.pasta_saida_var,
-        ).grid(
+        )
+
+        self.entry_pasta_saida.grid(
             row=2,
             column=1,
             sticky="ew",
             pady=(0, 12),
         )
+        self.btn_procurar = ttk.Button(
+            self.frame,
+            text="Procurar...",
+            command=self.escolher_pasta_saida,
+        )
 
+        self.btn_procurar.grid(
+            row=2,
+            column=2,
+            padx=(10, 0),
+            pady=(0, 12),
+        )
         # Botão
 
         self.btn_preparar = ttk.Button(
@@ -191,7 +213,7 @@ class JanelaPrincipal(tk.Tk):
         self.btn_preparar.grid(
             row=3,
             column=0,
-            columnspan=2,
+            columnspan=3,
             sticky="ew",
             pady=(20, 0),
         )
@@ -203,11 +225,28 @@ class JanelaPrincipal(tk.Tk):
             wrap="word",
         )
 
+        self.scroll_saida = ttk.Scrollbar(
+            self.frame,
+            orient="vertical",
+            command=self.texto_saida.yview,
+        )
+
+        self.texto_saida.configure(
+            yscrollcommand=self.scroll_saida.set,
+        )
+
         self.texto_saida.grid(
             row=4,
             column=0,
             columnspan=2,
             sticky="nsew",
+            pady=(20, 0),
+        )
+
+        self.scroll_saida.grid(
+            row=4,
+            column=2,
+            sticky="ns",
             pady=(20, 0),
         )
 
