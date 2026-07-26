@@ -59,7 +59,12 @@ class JanelaPrincipal(tk.Tk):
 
         nome_paroquia = self.paroquia_var.get().strip()
         celebrante = self.celebrante_var.get().strip() or None
+        self.btn_preparar.config(
+            state="disabled",
+            text="Preparando...",
+        )
 
+        self.update_idletasks()
         resultado = executar_preparacao(
             nome_paroquia=nome_paroquia,
             celebrante=celebrante,
@@ -81,6 +86,11 @@ class JanelaPrincipal(tk.Tk):
                 "Erro",
                 resultado.mensagem,
             )
+        self.btn_preparar.config(
+            state="normal",
+            text="Preparar transmissão",
+        )
+        
     def escolher_pasta_saida(self) -> None:
         """Permite escolher a pasta onde os arquivos serão gerados."""
 
