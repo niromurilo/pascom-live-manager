@@ -26,7 +26,7 @@ def parse_args() -> argparse.Namespace:
 def main() -> None:
     args = parse_args()
     nome_paroquia = args.paroquia or NOME_PAROQUIA
-
+    
     resultado = executar_preparacao(
         nome_paroquia=nome_paroquia,
         celebrante=args.celebrante,
