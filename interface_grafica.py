@@ -17,7 +17,32 @@ from services.preparacao import (
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
 ALTURA = 550
+GUIA_OPERACIONAL = """
+Fluxo da transmissão
 
+1. Informe o celebrante (opcional).
+
+2. Confira o nome da paróquia.
+
+3. Escolha a pasta onde os arquivos serão gerados.
+
+4. Clique em "Preparar transmissão".
+
+5. Aguarde a mensagem de sucesso.
+
+6. No OBS, abra o Animated Lower Thirds.
+
+7. Clique em Import.
+
+8. Selecione:
+animated_lower_thirds_liturgia.json
+
+9. Utilize:
+• titulo.txt
+• descricao.txt
+
+10. Consulte a aba Relatório para revisar todo o conteúdo gerado.
+"""
 
 class JanelaPrincipal(tk.Tk):
     """Janela principal."""
@@ -96,14 +121,14 @@ class JanelaPrincipal(tk.Tk):
             texto,
         )
 
-        self.texto_saida.config(state="disabled")
-
     def _configurar_janela(self) -> None:
         """Configura a janela."""
 
         self.title(TITULO_JANELA)
         self.geometry(f"{LARGURA}x{ALTURA}")
         self.minsize(LARGURA, ALTURA)
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
 
     def _criar_variaveis(self) -> None:
         """Cria as variáveis."""
@@ -130,37 +155,48 @@ class JanelaPrincipal(tk.Tk):
             column=0,
             sticky="nsew",
         )
-
+        
         self.frame_config = ttk.LabelFrame(
             self.frame,
             text=" Configurações da transmissão ",
             padding=15,
         )
-        self.frame_relatorio = ttk.LabelFrame(
-            self.frame,
-            text=" Relatório ",
-            padding=10,
-        )
+        self.notebook = ttk.Notebook(self.frame)
 
-        self.frame_config.grid(
-            row=0,
-            column=0,
-            sticky="ew",
-        )
-        self.frame_relatorio.grid(
+        self.notebook.grid(
             row=1,
             column=0,
             sticky="nsew",
             pady=(15, 0),
+        )
+        self.aba_relatorio = ttk.Frame(self.notebook)
+        self.aba_guia = ttk.Frame(self.notebook)
+
+        self.aba_relatorio.columnconfigure(0, weight=1)
+        self.aba_relatorio.rowconfigure(0, weight=1)
+
+        self.aba_guia.columnconfigure(0, weight=1)
+        self.aba_guia.rowconfigure(0, weight=1)
+
+        self.notebook.add(
+            self.aba_relatorio,
+            text="Relatório",
+        )
+
+        self.notebook.add(
+            self.aba_guia,
+            text="Guia Operacional",
+        )
+        self.frame_config.grid(
+            row=0,
+            column=0,
+            sticky="ew",
         )
 
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(1, weight=1)
 
         self.frame_config.columnconfigure(1, weight=1)
-
-        self.frame_relatorio.columnconfigure(0, weight=1)
-        self.frame_relatorio.rowconfigure(0, weight=1)
 
         # Celebrante
 
@@ -183,7 +219,6 @@ class JanelaPrincipal(tk.Tk):
             sticky="ew",
             pady=(0, 12),
         )
-
         # Paróquia
 
         ttk.Label(
@@ -272,13 +307,13 @@ class JanelaPrincipal(tk.Tk):
         # Área de saída
 
         self.texto_saida = tk.Text(
-            self.frame_relatorio,
+            self.aba_relatorio,
             height=12,
             wrap="word",
         )
 
         self.scroll_saida = ttk.Scrollbar(
-            self.frame_relatorio,
+            self.aba_relatorio,
             orient="vertical",
             command=self.texto_saida.yview,
         )
@@ -286,8 +321,26 @@ class JanelaPrincipal(tk.Tk):
         self.texto_saida.configure(
             state="disabled",
             font=("Consolas", 10),
+            yscrollcommand=self.scroll_saida.set,
         )
+        self.texto_guia = tk.Text(
+            self.aba_guia,
+            wrap="word",
+            font=("Segoe UI", 10),
+            padx=10,
+            pady=10,
+        )
+        self.texto_guia.insert(
+            "1.0",
+            GUIA_OPERACIONAL,
+        )
+        self.texto_guia.config(state="disabled")
 
+        self.texto_guia.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+        )
         self.texto_saida.grid(
             row=0,
             column=0,
@@ -299,9 +352,7 @@ class JanelaPrincipal(tk.Tk):
             column=1,
             sticky="nsew"
         )
-
-        self.texto_saida.config(state="disabled")
-
+        
 def main() -> None:
     """Ponto de entrada."""
 
