@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
-
+from shutil import copy2
 from animated_lower_thirds import criar_lowers_da_liturgia, gerar_e_validar_json_dos_lowers, montar_resumo_dos_lowers
 from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 from gerador_descricao import gerar_descricao, gerar_titulo, salvar_texto
@@ -21,7 +21,7 @@ NOME_ARQUIVO_JSON = "animated_lower_thirds_liturgia.json"
 NOME_ARQUIVO_TITULO = "titulo.txt"
 NOME_ARQUIVO_DESCRICAO = "descricao.txt"
 NOME_ARQUIVO_RESUMO = "resumo.txt"
-
+CAMINHO_LOGO = Path("assets") / "logo.png"
 
 @dataclass(frozen=True)
 class ResultadoPreparacao(Resultado):
@@ -71,14 +71,24 @@ def executar_preparacao(
     except OSError as erro:
         return ResultadoPreparacao(sucesso=False, mensagem=f"Problema ao salvar título/descrição: {erro}")
 
+    # Copia o logo para a pasta de saída
+    try:
+        if CAMINHO_LOGO.exists():
+            copy2(
+                CAMINHO_LOGO,
+                pasta_saida / CAMINHO_LOGO.name,
+            )
+    except OSError as erro:
+        return ResultadoPreparacao(
+            sucesso=False,
+            mensagem=f"Problema ao copiar o logo: {erro}",
+        )
     caminho_resumo = pasta_saida / NOME_ARQUIVO_RESUMO
     relatorio = "\n\n".join([
         f"TÍTULO DO VÍDEO:\n{titulo}",
         f"DESCRIÇÃO DO VÍDEO:\n{descricao}",
         f"LOWER THIRDS:\n{montar_resumo_dos_lowers(liturgia, lowers, caminho_json)}",
-        f"Arquivos gerados em: {pasta_saida}/",
-        "\nAbra o painel do Animated Lower Thirds no OBS e clique em Import.",
-    ])
+        f"Arquivos gerados em: {pasta_saida}/",])
 
     try:
         salvar_texto(relatorio, caminho_resumo)

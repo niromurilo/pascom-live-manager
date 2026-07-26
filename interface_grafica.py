@@ -82,7 +82,6 @@ class JanelaPrincipal(tk.Tk):
                 "📄 descricao.txt\n"
                 "📄 resumo.txt\n"
                 "📄 animated_lower_thirds_liturgia.json\n\n"
-                f"Local:\n{self.pasta_saida_var.get()}"
             )
 
             self.atualizar_saida(relatorio + arquivos)
