@@ -72,7 +72,20 @@ class JanelaPrincipal(tk.Tk):
         )
 
         if resultado.sucesso:
-            self.atualizar_saida(resultado.relatorio or "")
+            relatorio = resultado.relatorio or ""
+
+            arquivos = (
+                "\n\n"
+                "Arquivos gerados\n"
+                "────────────────────────\n"
+                "📄 titulo.txt\n"
+                "📄 descricao.txt\n"
+                "📄 resumo.txt\n"
+                "📄 animated_lower_thirds_liturgia.json\n\n"
+                f"Local:\n{self.pasta_saida_var.get()}"
+            )
+
+            self.atualizar_saida(relatorio + arquivos)
 
             messagebox.showinfo(
                 "Pascom Live Manager",
@@ -90,7 +103,7 @@ class JanelaPrincipal(tk.Tk):
             state="normal",
             text="Preparar transmissão",
         )
-        
+
     def escolher_pasta_saida(self) -> None:
         """Permite escolher a pasta onde os arquivos serão gerados."""
 
