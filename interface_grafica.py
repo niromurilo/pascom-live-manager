@@ -81,7 +81,10 @@ class JanelaPrincipal(tk.Tk):
                 "📄 titulo.txt\n"
                 "📄 descricao.txt\n"
                 "📄 resumo.txt\n"
-                "📄 animated_lower_thirds_liturgia.json\n\n"
+                "📄 animated_lower_thirds_liturgia.json\n"
+                "📄 logo padre\n"
+                "📄 logo leituras\n"
+                "📄 logo pix\n\n"
             )
 
             self.atualizar_saida(relatorio + arquivos)
