@@ -1,13 +1,35 @@
 # Testes
 
-29/06/2026
+## Sprint 1
 
-Buscar liturgia
+✔ Conexão com OBS
 
-Resultado:
-Funcionou
+---
 
-OBS
+## Sprint 2
 
-Resultado:
-Pendente
+✔ Busca da liturgia
+
+✔ Extração das leituras
+
+✔ Geração do JSON
+
+✔ Validação do JSON
+
+---
+
+## Sprint 3
+
+✔ Geração do título
+
+✔ Geração da descrição
+
+✔ Geração do resumo
+
+✔ Configuração via .env
+
+---
+
+## Sprint 4
+
+Em desenvolvimento.

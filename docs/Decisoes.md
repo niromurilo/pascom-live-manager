@@ -140,3 +140,22 @@ manutenção exige conhecimento avançado.
 **Risco assumido:** nenhum novo — o processo mantém a mesma etapa manual que
 já existe hoje (um clique de Import), só que agora com o JSON já preparado
 automaticamente pelo PLM.
+
+## Interface gráfica em Tkinter
+
+Decisão:
+Utilizar Tkinter para a primeira interface gráfica.
+
+Motivo:
+
+- faz parte da biblioteca padrão
+- não adiciona dependências
+- facilita a geração do executável
+- suficiente para a complexidade do projeto
+
+Alternativas:
+
+- PySide6
+- CustomTkinter
+
+Foram adiadas para versões futuras.

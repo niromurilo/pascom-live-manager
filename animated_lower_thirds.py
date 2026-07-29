@@ -8,7 +8,7 @@ import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
-
+from resultado import Resultado
 from buscar_liturgia import (
     LiturgiaDoDia,
     extrair_citacao,
@@ -38,12 +38,14 @@ class LowerThird:
 def criar_lowers_da_liturgia(
     liturgia: LiturgiaDoDia,
     celebrante: str | None = None,
+    chave_pix: str = ""
 ) -> list[LowerThird]:
     """Cria os lowers disponiveis a partir dos dados extraidos da liturgia."""
     lower_titulo = _criar_lower_titulo(liturgia, celebrante)
     sequencia_de_leituras = _criar_sequencia_de_leituras(liturgia)
+    lower_pix = LowerThird(painel=3, nome="PIX DA PARÓQUIA", info=chave_pix)
 
-    return [lower_titulo, *sequencia_de_leituras]
+    return [lower_titulo, *sequencia_de_leituras, lower_pix]
 
 
 def gerar_configuracao_importacao(lowers: list[LowerThird]) -> dict[str, str]:
@@ -94,7 +96,12 @@ def _criar_lower_titulo(
 
 
 def _criar_sequencia_de_leituras(liturgia: LiturgiaDoDia) -> list[LowerThird]:
-    """Monta a sequencia de leituras no painel 2, um slot por item, na ordem da missa."""
+    """Monta a sequencia de leituras no painel 2, um slot por item, na ordem da missa.
+    Adiciona PRECES como último slot se houver resposta cadastrada.
+    """
+    from paroquia_config import carregar_configuracao
+    config = carregar_configuracao()
+
     sequencia = [
         LowerThird(
             painel=PAINEL_LEITURAS,
@@ -130,8 +137,22 @@ def _criar_sequencia_de_leituras(liturgia: LiturgiaDoDia) -> list[LowerThird]:
             slot=proximo_slot,
         )
     )
+    proximo_slot += 1
+
+    # Adiciona PRECES se houver resposta cadastrada
+    preces = (config.preces or "").strip()
+    if preces:
+        sequencia.append(
+            LowerThird(
+                painel=PAINEL_LEITURAS,
+                nome="PRECES",
+                info=f"R. {preces}",
+                slot=proximo_slot,
+            )
+        )
 
     return sequencia
+
 
 
 def _resetar_slots_do_painel(painel: int) -> dict[str, str]:
@@ -187,20 +208,19 @@ def validar_configuracao_gerada(lowers: list[LowerThird], caminho: Path) -> None
         if not dados.get(chave_info):
             raise ValueError(f"Campo '{chave_info}' ficou vazio no JSON gerado ({lower.nome}).")
         
-def gerar_e_validar_json_dos_lowers(lowers: list[LowerThird], caminho: Path) -> bool:
-    """Salva e valida o JSON dos lowers, imprimindo mensagem amigável em caso de erro.
+def gerar_e_validar_json_dos_lowers(lowers: list[LowerThird], caminho: Path) -> Resultado:
+    """Salva e valida o JSON dos lowers.
 
-    Retorna True se tudo correu bem, False se falhou — quem chama decide
-    o que fazer a seguir.
+    Não imprime nada — quem chama decide como exibir o resultado
+    (CLI imprime, GUI mostra na tela).
     """
     try:
         dados = gerar_configuracao_importacao(lowers)
         salvar_configuracao_importacao(dados, caminho)
         validar_configuracao_gerada(lowers, caminho)
-        return True
+        return Resultado(sucesso=True, mensagem="JSON gerado e validado com sucesso!")
     except (OSError, ValueError) as erro:
-        print(f"❌ Problema ao gerar o arquivo: {erro}")
-        return False
+        return Resultado(sucesso=False, mensagem=f"Problema ao gerar o arquivo: {erro}")
 
 
 def montar_resumo_dos_lowers(liturgia: LiturgiaDoDia, lowers: list[LowerThird], caminho: Path) -> str:
