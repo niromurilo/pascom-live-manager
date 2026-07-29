@@ -42,7 +42,9 @@ def main() -> None:
         return
     liturgia = resultado_busca.liturgia
 
-    lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante)
+    from paroquia_config import carregar_configuracao
+    config = carregar_configuracao()
+    lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante, chave_pix=config.chave_pix)
 
     resultado_json = gerar_e_validar_json_dos_lowers(lowers, args.saida)
     if not resultado_json.sucesso:

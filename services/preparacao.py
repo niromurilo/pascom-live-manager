@@ -58,7 +58,9 @@ def executar_preparacao(
 
     hoje = date.today()
     caminho_json = pasta_saida / NOME_ARQUIVO_JSON
-    lowers = criar_lowers_da_liturgia(liturgia, celebrante=celebrante)
+    from paroquia_config import carregar_configuracao
+    config = carregar_configuracao()
+    lowers = criar_lowers_da_liturgia(liturgia, celebrante=celebrante, chave_pix=config.chave_pix)
     resultado_json = gerar_e_validar_json_dos_lowers(lowers, caminho_json)
     if not resultado_json.sucesso:
         return ResultadoPreparacao(sucesso=False, mensagem=resultado_json.mensagem)

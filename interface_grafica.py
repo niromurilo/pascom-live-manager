@@ -2,8 +2,8 @@
 Pascom Live Manager
 Interface gráfica principal.
 """
-
 from __future__ import annotations
+from paroquia_config import carregar_configuracao, salvar_configuracao, ConfiguracaoParoquia
 from pathlib import Path
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
@@ -18,30 +18,68 @@ TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
 ALTURA = 550
 GUIA_OPERACIONAL = """
-Fluxo da transmissão
+Bem-vindo ao Pascom Live Manager!
 
-1. Informe o celebrante (opcional).
+Este programa automatiza a preparação dos arquivos utilizados na transmissão da Santa Missa.
 
-2. Confira o nome da paróquia.
+Primeira utilização
 
-3. Escolha a pasta onde os arquivos serão gerados.
+Antes da primeira transmissão, configure os recursos da sua paróquia na seção Recursos da Paróquia.
 
-4. Clique em "Preparar transmissão".
+Selecione:
 
-5. Aguarde a mensagem de sucesso.
+• Logo PIX
+• Logo Leituras
+• Logo Celebrante
 
-6. No OBS, abra o Animated Lower Thirds.
+Depois, preencha o campo Preces com o texto padrão utilizado pela sua paróquia.
 
-7. Clique em Import.
+Essas configurações são salvas automaticamente e não precisam ser configuradas novamente, exceto quando desejar alterá-las.
 
-8. Selecione:
-animated_lower_thirds_liturgia.json
+Preparando uma transmissão
+Informe o nome do celebrante (opcional).
+Confira o nome da paróquia.
+Escolha a pasta onde os arquivos serão salvos.
+Clique em Preparar transmissão.
 
-9. Utilize:
-• titulo.txt
-• descricao.txt
+Após alguns segundos, todos os arquivos necessários serão gerados automaticamente.
 
-10. Consulte a aba Relatório para revisar todo o conteúdo gerado.
+Arquivos gerados
+
+O programa gera automaticamente:
+
+• Título da transmissão
+• Descrição para YouTube/Facebook
+• Lower Thirds (JSON)
+• Resumo da transmissão
+
+Também copia para a pasta de saída:
+
+• Logo PIX
+• Logo Leituras
+• Logo Celebrante
+
+Alterando configurações
+
+Sempre que desejar alterar algum recurso:
+
+• Clique em Selecionar... ao lado do logo correspondente.
+
+Para alterar as preces:
+
+• Edite o campo Preces.
+
+Todas as alterações são salvas automaticamente.
+
+Em caso de erro
+
+Verifique:
+
+• Se há conexão com a internet.
+• Se os logos selecionados ainda existem no computador.
+• A mensagem exibida na aba Relatório.
+
+Dica: Após gerar a transmissão, clique em Abrir pasta para acessar rapidamente todos os arquivos gerados.
 """
 
 class JanelaPrincipal(tk.Tk):
@@ -49,10 +87,33 @@ class JanelaPrincipal(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
-
+        self.configuracao = carregar_configuracao()
         self._configurar_janela()
         self._criar_variaveis()
         self._criar_widgets()
+
+    def _atualizar_label_logo(self, tipo: str):
+        caminho = getattr(self.configuracao, f'caminho_logo_{tipo}')
+        label = getattr(self, f'label_logo_{tipo}')
+        label.config(text=str(caminho) if caminho else "Nenhum arquivo selecionado")
+
+    def _selecionar_logo(self, tipo: str):
+        arquivo = filedialog.askopenfilename(
+            title=f"Selecione o logo {tipo.capitalize()}",
+            filetypes=[("Imagens", "*.png;*.jpg;*.jpeg;*.bmp;*.gif"), ("Todos os arquivos", "*.*")]
+        )
+        if arquivo:
+            setattr(self.configuracao, f'caminho_logo_{tipo}', Path(arquivo))
+            salvar_configuracao(self.configuracao)
+            self._atualizar_label_logo(tipo)
+
+    def _salvar_preces(self, event=None):
+        self.configuracao.preces = self.text_preces.get("1.0", "end-1c")
+        salvar_configuracao(self.configuracao)
+
+    def _salvar_pix(self, event=None):
+        self.configuracao.chave_pix = self.text_pix.get("1.0", "end-1c")
+        salvar_configuracao(self.configuracao)
 
     def preparar_transmissao(self) -> None:
         """Executa a preparação da transmissão."""
@@ -189,7 +250,7 @@ class JanelaPrincipal(tk.Tk):
         self.notebook = ttk.Notebook(self.frame)
 
         self.notebook.grid(
-            row=1,
+            row=2,
             column=0,
             sticky="nsew",
             pady=(15, 0),
@@ -217,9 +278,33 @@ class JanelaPrincipal(tk.Tk):
             column=0,
             sticky="ew",
         )
+        self.frame_config.grid(
+            row=0,
+            column=0,
+            sticky="ew",
+        )
+
+        self.frame_recursos = ttk.LabelFrame(
+            self.frame,
+            text=" Recursos da Paróquia ",
+            padding=15,
+        )
+        self.frame_recursos.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(10, 0),
+        )
+
+        self.notebook.grid(
+            row=2,
+            column=0,
+            sticky="nsew",
+            pady=(15, 0),
+        )
 
         self.frame.columnconfigure(0, weight=1)
-        self.frame.rowconfigure(1, weight=1)
+        self.frame.rowconfigure(2, weight=1)
 
         self.frame_config.columnconfigure(1, weight=1)
 
@@ -289,6 +374,46 @@ class JanelaPrincipal(tk.Tk):
             sticky="ew",
             pady=(0, 12),
         )
+        self.frame_recursos = ttk.LabelFrame(
+            self.frame,
+            text=" Recursos da Paróquia ",
+            padding=15,
+        )
+
+        self.frame_recursos.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(15, 0),
+        )
+                # Widgets para Logos
+        tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
+        for idx, (tipo, label_texto) in enumerate(tipos):
+            ttk.Label(self.frame_recursos, text=label_texto + ":").grid(row=idx, column=0, sticky="w")
+            label = ttk.Label(self.frame_recursos, text="", width=40)
+            label.grid(row=idx, column=1, sticky="w", padx=(5, 0))
+            setattr(self, f"label_logo_{tipo}", label)
+            self._atualizar_label_logo(tipo)
+            btn = ttk.Button(
+                self.frame_recursos,
+                text="Selecionar...",
+                command=lambda t=tipo: self._selecionar_logo(t)
+            )
+            btn.grid(row=idx, column=2, padx=(5, 0))
+
+        # Campo Preces
+        ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
+        self.text_preces = tk.Text(self.frame_recursos, height=4, width=40, wrap="word")
+        self.text_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.text_preces.insert("1.0", self.configuracao.preces or "")
+        self.text_preces.bind("<FocusOut>", self._salvar_preces)
+
+        # Campo PIX da Paróquia
+        ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
+        self.text_pix = tk.Text(self.frame_recursos, height=2, width=40, wrap="word")
+        self.text_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.text_pix.insert("1.0", self.configuracao.chave_pix or "")
+        self.text_pix.bind("<FocusOut>", self._salvar_pix)
         self.btn_procurar = ttk.Button(
             self.frame_config,
             text="Procurar...",
