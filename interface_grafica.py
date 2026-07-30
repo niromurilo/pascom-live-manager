@@ -14,6 +14,35 @@ from services.preparacao import (
     executar_preparacao,
 )
 
+class Tema:
+    """Paleta de cores e fontes centralizada do tema escuro.
+
+    Único lugar que declara cor ou fonte em todo o arquivo — qualquer
+    widget que precisar de uma dessas propriedades lê daqui, nunca
+    declara um valor solto (objetivo de centralização).
+    """
+
+    FUNDO = "#1e1f26"
+    FUNDO_PAINEL = "#262832"
+    FUNDO_CAMPO = "#2d3040"
+    BORDA = "#3a3d4d"
+
+    TEXTO = "#e8e8ea"
+    TEXTO_SECUNDARIO = "#9a9db0"
+
+    DESTAQUE = "#4a7fc9"
+    DESTAQUE_HOVER = "#5c8fd6"
+
+    ABA_ATIVA = "#2d3040"
+    ABA_INATIVA = "#1e1f26"
+
+    FONTE_PADRAO = ("Segoe UI", 11)
+    FONTE_SECAO = ("Segoe UI", 13, "bold")
+    FONTE_BOTAO = ("Segoe UI", 11, "bold")
+    FONTE_BOTAO_PRINCIPAL = ("Segoe UI", 13, "bold")
+    FONTE_ABA = ("Segoe UI", 12, "bold")
+    FONTE_MONO = ("Consolas", 11)
+
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
 ALTURA = 550
@@ -87,15 +116,120 @@ class JanelaPrincipal(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
+        self._configurar_estilo()
         self.configuracao = carregar_configuracao()
         self._configurar_janela()
         self._criar_variaveis()
         self._criar_widgets()
 
+    def _configurar_estilo(self) -> None:
+        """Configura o tema escuro da interface, usando ttk.Style sempre que possível."""
+        estilo = ttk.Style()
+        estilo.theme_use("clam")
+
+        estilo.configure(
+            "TLabel",
+            font=Tema.FONTE_PADRAO,
+            padding=3,
+            background=Tema.FUNDO_PAINEL,
+            foreground=Tema.TEXTO,
+        )
+        estilo.configure("TEntry", font=Tema.FONTE_PADRAO, padding=3)
+
+        estilo.configure(
+            "TButton",
+            font=Tema.FONTE_BOTAO,
+            padding=8,
+            background=Tema.FUNDO_CAMPO,
+            foreground=Tema.TEXTO,
+            borderwidth=1,
+            relief="flat",
+        )
+        estilo.map(
+            "TButton",
+            background=[("active", Tema.DESTAQUE_HOVER), ("!active", Tema.FUNDO_CAMPO)],
+            foreground=[("active", Tema.TEXTO), ("!active", Tema.TEXTO)],
+        )
+
+        estilo.configure(
+            "Principal.TButton",
+            font=Tema.FONTE_BOTAO_PRINCIPAL,
+            padding=10,
+            background=Tema.DESTAQUE,
+            foreground=Tema.TEXTO,
+            borderwidth=0,
+            relief="flat",
+        )
+        estilo.map(
+            "Principal.TButton",
+            background=[("active", Tema.DESTAQUE_HOVER), ("!active", Tema.DESTAQUE)],
+        )
+
+        estilo.configure(
+            "TLabelFrame.Label",
+            font=Tema.FONTE_SECAO,
+            padding=8,
+            background=Tema.FUNDO_PAINEL,
+            foreground=Tema.TEXTO,
+        )
+        estilo.configure(
+            "TLabelFrame",
+            padding=18,
+            background=Tema.FUNDO_PAINEL,
+            borderwidth=1,
+            relief="groove",
+        )
+
+        # Abas maiores e mais legíveis — objetivo 8
+        estilo.configure("TNotebook", tabposition="n", background=Tema.FUNDO, borderwidth=0)
+        estilo.configure(
+            "TNotebook.Tab",
+            font=Tema.FONTE_ABA,
+            padding=[24, 12],
+            background=Tema.ABA_INATIVA,
+            foreground=Tema.TEXTO_SECUNDARIO,
+            borderwidth=0,
+        )
+        estilo.map(
+            "TNotebook.Tab",
+            background=[("selected", Tema.ABA_ATIVA), ("!selected", Tema.ABA_INATIVA)],
+            foreground=[("selected", Tema.TEXTO), ("!selected", Tema.TEXTO_SECUNDARIO)],
+        )
+
+        estilo.configure("TFrame", background=Tema.FUNDO)
+        self.configure(bg=Tema.FUNDO)
+
     def _atualizar_label_logo(self, tipo: str):
+        import os
         caminho = getattr(self.configuracao, f'caminho_logo_{tipo}')
         label = getattr(self, f'label_logo_{tipo}')
-        label.config(text=str(caminho) if caminho else "Nenhum arquivo selecionado")
+        if caminho:
+            nome = os.path.basename(str(caminho))
+            label.config(text=f'✔ {nome}')
+            self._set_tooltip(label, str(caminho))
+        else:
+            label.config(text="Nenhum arquivo selecionado")
+            self._set_tooltip(label, "")
+
+    def _set_tooltip(self, widget, text):
+        # Simples tooltip usando bind
+        def on_enter(event):
+            if text:
+                self._tooltip = tk.Toplevel(widget)
+                self._tooltip.wm_overrideredirect(True)
+                x = widget.winfo_rootx() + 20
+                y = widget.winfo_rooty() + 20
+                self._tooltip.wm_geometry(f"+{x}+{y}")
+                label = tk.Label(self._tooltip, text=text, background="#ffffe0", relief="solid", borderwidth=1, font=("Segoe UI", 9))
+                label.pack()
+        def on_leave(event):
+            if hasattr(self, '_tooltip'):
+                self._tooltip.destroy()
+                self._tooltip = None
+        widget.unbind("<Enter>")
+        widget.unbind("<Leave>")
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
 
     def _selecionar_logo(self, tipo: str):
         arquivo = filedialog.askopenfilename(
@@ -234,7 +368,7 @@ class JanelaPrincipal(tk.Tk):
 
         self.frame = ttk.Frame(
             self,
-            padding=20,
+            padding=(8, 8, 8, 0),
         )
         self.frame.grid(
             row=0,
@@ -245,9 +379,10 @@ class JanelaPrincipal(tk.Tk):
         self.frame_config = ttk.LabelFrame(
             self.frame,
             text=" Configurações da transmissão ",
-            padding=15,
+            padding=20,
         )
         self.notebook = ttk.Notebook(self.frame)
+        self.notebook.enable_traversal()
 
         self.notebook.grid(
             row=2,
@@ -277,23 +412,25 @@ class JanelaPrincipal(tk.Tk):
             row=0,
             column=0,
             sticky="ew",
+            pady=(0, 6),
         )
         self.frame_config.grid(
             row=0,
             column=0,
             sticky="ew",
+            pady=(0, 6),
         )
 
         self.frame_recursos = ttk.LabelFrame(
             self.frame,
             text=" Recursos da Paróquia ",
-            padding=15,
+            padding=20,
         )
         self.frame_recursos.grid(
             row=1,
             column=0,
             sticky="ew",
-            pady=(10, 0),
+            pady=(0, 6),
         )
 
         self.notebook.grid(
@@ -389,9 +526,9 @@ class JanelaPrincipal(tk.Tk):
                 # Widgets para Logos
         tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
         for idx, (tipo, label_texto) in enumerate(tipos):
-            ttk.Label(self.frame_recursos, text=label_texto + ":").grid(row=idx, column=0, sticky="w")
+            ttk.Label(self.frame_recursos, text=label_texto + ":").grid(row=idx, column=0, sticky="w", pady=(0, 6))
             label = ttk.Label(self.frame_recursos, text="", width=40)
-            label.grid(row=idx, column=1, sticky="w", padx=(5, 0))
+            label.grid(row=idx, column=1, sticky="w", padx=(5, 0), pady=(0, 6))
             setattr(self, f"label_logo_{tipo}", label)
             self._atualizar_label_logo(tipo)
             btn = ttk.Button(
@@ -399,18 +536,18 @@ class JanelaPrincipal(tk.Tk):
                 text="Selecionar...",
                 command=lambda t=tipo: self._selecionar_logo(t)
             )
-            btn.grid(row=idx, column=2, padx=(5, 0))
+            btn.grid(row=idx, column=2, padx=(5, 0), pady=(0, 6))
 
         # Campo Preces
         ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
-        self.text_preces = tk.Text(self.frame_recursos, height=4, width=40, wrap="word")
+        self.text_preces = tk.Text(self.frame_recursos, height=7, width=40, wrap="word", font=("Segoe UI", 12), padx=10, pady=8, bd=1, relief="solid", bg="#23272e", fg="#f0f0f0", insertbackground="#f0f0f0")
         self.text_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.text_preces.insert("1.0", self.configuracao.preces or "")
         self.text_preces.bind("<FocusOut>", self._salvar_preces)
 
         # Campo PIX da Paróquia
         ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
-        self.text_pix = tk.Text(self.frame_recursos, height=2, width=40, wrap="word")
+        self.text_pix = tk.Text(self.frame_recursos, height=2, width=40, wrap="word", font=("Segoe UI", 11), padx=8, pady=6, bd=1, relief="solid", bg="#f7f7f7")
         self.text_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.text_pix.insert("1.0", self.configuracao.chave_pix or "")
         self.text_pix.bind("<FocusOut>", self._salvar_pix)
@@ -418,6 +555,8 @@ class JanelaPrincipal(tk.Tk):
             self.frame_config,
             text="Procurar...",
             command=self.escolher_pasta_saida,
+            width=12,
+            style="Principal.TButton"
         )
 
         self.btn_procurar.grid(
@@ -432,6 +571,8 @@ class JanelaPrincipal(tk.Tk):
             self.frame_config,
             text="Preparar transmissão",
             command=self.preparar_transmissao,
+            width=22,
+            style="Principal.TButton"
         )
 
         self.btn_preparar.grid(
@@ -446,6 +587,8 @@ class JanelaPrincipal(tk.Tk):
             self.frame_config,
             text="Abrir pasta",
             command=self.abrir_pasta_saida,
+            width=18,
+            style="Principal.TButton"
         )
         self.btn_abrir_pasta.grid(
             row=3,
@@ -460,6 +603,15 @@ class JanelaPrincipal(tk.Tk):
             self.aba_relatorio,
             height=12,
             wrap="word",
+            font=("Consolas", 11),
+            padx=16,
+            pady=10,
+            bd=1,
+            relief="solid",
+            bg="#f4f6fa",
+            highlightthickness=1,
+            highlightbackground="#bfc9d9",
+            highlightcolor="#bfc9d9"
         )
 
         self.scroll_saida = ttk.Scrollbar(
@@ -470,15 +622,23 @@ class JanelaPrincipal(tk.Tk):
 
         self.texto_saida.configure(
             state="disabled",
-            font=("Consolas", 10),
             yscrollcommand=self.scroll_saida.set,
+            highlightthickness=1,
+            highlightbackground="#cccccc",
+            highlightcolor="#cccccc"
         )
         self.texto_guia = tk.Text(
             self.aba_guia,
             wrap="word",
-            font=("Segoe UI", 10),
-            padx=10,
-            pady=10,
+            font=("Segoe UI", 12),
+            padx=20,
+            pady=14,
+            bd=1,
+            relief="solid",
+            bg="#f4f6fa",
+            highlightthickness=1,
+            highlightbackground="#bfc9d9",
+            highlightcolor="#bfc9d9"
         )
         self.texto_guia.insert(
             "1.0",
