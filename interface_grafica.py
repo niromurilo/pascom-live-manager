@@ -242,11 +242,11 @@ class JanelaPrincipal(tk.Tk):
             self._atualizar_label_logo(tipo)
 
     def _salvar_preces(self, event=None):
-        self.configuracao.preces = self.text_preces.get("1.0", "end-1c")
+        self.configuracao.preces = self.texto_preces.get("1.0", "end-1c")
         salvar_configuracao(self.configuracao)
 
     def _salvar_pix(self, event=None):
-        self.configuracao.chave_pix = self.text_pix.get("1.0", "end-1c")
+        self.configuracao.chave_pix = self.texto_pix.get("1.0", "end-1c")
         salvar_configuracao(self.configuracao)
 
     def preparar_transmissao(self) -> None:
@@ -364,241 +364,145 @@ class JanelaPrincipal(tk.Tk):
         )
 
     def _criar_widgets(self) -> None:
-        """Cria os componentes da tela."""
+        """Cria os componentes da tela, delegando cada seção a um método próprio."""
+        self._criar_frame_principal()
+        self._criar_frame_config()
+        self._criar_frame_recursos()
+        self._criar_notebook()
 
-        self.frame = ttk.Frame(
-            self,
-            padding=(8, 8, 8, 0),
-        )
-        self.frame.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-        
-        self.frame_config = ttk.LabelFrame(
-            self.frame,
-            text=" Configurações da transmissão ",
-            padding=20,
-        )
-        self.notebook = ttk.Notebook(self.frame)
-        self.notebook.enable_traversal()
 
-        self.notebook.grid(
-            row=2,
-            column=0,
-            sticky="nsew",
-            pady=(15, 0),
-        )
-        self.aba_relatorio = ttk.Frame(self.notebook)
-        self.aba_guia = ttk.Frame(self.notebook)
-
-        self.aba_relatorio.columnconfigure(0, weight=1)
-        self.aba_relatorio.rowconfigure(0, weight=1)
-
-        self.aba_guia.columnconfigure(0, weight=1)
-        self.aba_guia.rowconfigure(0, weight=1)
-
-        self.notebook.add(
-            self.aba_relatorio,
-            text="Relatório",
-        )
-
-        self.notebook.add(
-            self.aba_guia,
-            text="Guia Operacional",
-        )
-        self.frame_config.grid(
-            row=0,
-            column=0,
-            sticky="ew",
-            pady=(0, 6),
-        )
-        self.frame_config.grid(
-            row=0,
-            column=0,
-            sticky="ew",
-            pady=(0, 6),
-        )
-
-        self.frame_recursos = ttk.LabelFrame(
-            self.frame,
-            text=" Recursos da Paróquia ",
-            padding=20,
-        )
-        self.frame_recursos.grid(
-            row=1,
-            column=0,
-            sticky="ew",
-            pady=(0, 6),
-        )
-
-        self.notebook.grid(
-            row=2,
-            column=0,
-            sticky="nsew",
-            pady=(15, 0),
-        )
-
+    def _criar_frame_principal(self) -> None:
+        """Cria o frame raiz que contém toda a interface."""
+        self.frame = ttk.Frame(self, padding=(8, 8, 8, 0))
+        self.frame.grid(row=0, column=0, sticky="nsew")
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(2, weight=1)
 
+
+    def _criar_frame_config(self) -> None:
+        """Cria a seção 'Configurações da transmissão': celebrante, paróquia, pasta e botões."""
+        self.frame_config = ttk.LabelFrame(self.frame, text=" Configurações da transmissão ", padding=20)
+        self.frame_config.grid(row=0, column=0, sticky="ew", pady=(0, 6))
         self.frame_config.columnconfigure(1, weight=1)
 
-        # Celebrante
+        self._criar_campo(self.frame_config, "Celebrante:", self.celebrante_var, row=0)
+        self._criar_campo(self.frame_config, "Paróquia:", self.paroquia_var, row=1)
 
-        ttk.Label(
-            self.frame_config,
-            text="Celebrante:",
-        ).grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
+        ttk.Label(self.frame_config, text="Pasta de saída:").grid(row=2, column=0, sticky="w", pady=(0, 6))
+        self.entry_pasta_saida = ttk.Entry(self.frame_config, textvariable=self.pasta_saida_var)
+        self.entry_pasta_saida.grid(row=2, column=1, sticky="ew", pady=(0, 12))
 
-        ttk.Entry(
-            self.frame_config,
-            textvariable=self.celebrante_var,
-        ).grid(
-            row=0,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
+        self.btn_procurar = ttk.Button(
+            self.frame_config, text="Procurar...", command=self.escolher_pasta_saida, width=12, style="Principal.TButton"
         )
-        # Paróquia
+        self.btn_procurar.grid(row=2, column=2, padx=(10, 0), pady=(0, 12))
 
-        ttk.Label(
-            self.frame_config,
-            text="Paróquia:",
-        ).grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
+        self.btn_preparar = ttk.Button(
+            self.frame_config, text="Preparar transmissão", command=self.preparar_transmissao, width=22, style="Principal.TButton"
         )
+        self.btn_preparar.grid(row=3, column=0, sticky="ew", padx=(0, 5))
 
-        ttk.Entry(
-            self.frame_config,
-            textvariable=self.paroquia_var,
-        ).grid(
-            row=1,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
+        self.btn_abrir_pasta = ttk.Button(
+            self.frame_config, text="Abrir pasta", command=self.abrir_pasta_saida, width=18, style="Principal.TButton"
         )
+        self.btn_abrir_pasta.grid(row=3, column=1, columnspan=2, sticky="ew", padx=(5, 0))
 
-        # Pasta
 
-        ttk.Label(
-            self.frame_config,
-            text="Pasta de saída:",
-        ).grid(
-            row=2,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
+    def _criar_campo(self, container: ttk.Frame, rotulo: str, variavel: tk.StringVar, row: int) -> None:
+        """Cria um par Label + Entry alinhado — padrão repetido em Celebrante e Paróquia."""
+        ttk.Label(container, text=rotulo).grid(row=row, column=0, sticky="w", pady=(0, 6))
+        ttk.Entry(container, textvariable=variavel).grid(row=row, column=1, sticky="ew", pady=(0, 12))
 
-        self.entry_pasta_saida = ttk.Entry(
-            self.frame_config,
-            textvariable=self.pasta_saida_var,
-        )
 
-        self.entry_pasta_saida.grid(
-            row=2,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
-        )
-        self.frame_recursos = ttk.LabelFrame(
-            self.frame,
-            text=" Recursos da Paróquia ",
-            padding=15,
-        )
+    def _criar_frame_recursos(self) -> None:
+        """Cria a seção 'Recursos da Paróquia': logos, preces e PIX."""
+        self.frame_recursos = ttk.LabelFrame(self.frame, text=" Recursos da Paróquia ", padding=15)
+        self.frame_recursos.grid(row=1, column=0, sticky="ew", pady=(15, 0))
 
-        self.frame_recursos.grid(
-            row=1,
-            column=0,
-            sticky="ew",
-            pady=(15, 0),
-        )
-                # Widgets para Logos
+        self._criar_campos_logos()
+        self._criar_campo_preces()
+        self._criar_campo_pix()
+
+
+    def _criar_campos_logos(self) -> None:
+        """Cria as linhas de seleção dos 3 logos da paróquia (PIX, Leituras, Celebrante)."""
         tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
-        for idx, (tipo, label_texto) in enumerate(tipos):
-            ttk.Label(self.frame_recursos, text=label_texto + ":").grid(row=idx, column=0, sticky="w", pady=(0, 6))
+        for idx, (tipo, rotulo) in enumerate(tipos):
+            ttk.Label(self.frame_recursos, text=f"{rotulo}:").grid(row=idx, column=0, sticky="w", pady=(0, 6))
+
             label = ttk.Label(self.frame_recursos, text="", width=40)
             label.grid(row=idx, column=1, sticky="w", padx=(5, 0), pady=(0, 6))
             setattr(self, f"label_logo_{tipo}", label)
             self._atualizar_label_logo(tipo)
-            btn = ttk.Button(
-                self.frame_recursos,
-                text="Selecionar...",
-                command=lambda t=tipo: self._selecionar_logo(t)
-            )
-            btn.grid(row=idx, column=2, padx=(5, 0), pady=(0, 6))
 
-        # Campo Preces
+            botao = ttk.Button(self.frame_recursos, text="Selecionar...", command=lambda t=tipo: self._selecionar_logo(t))
+            botao.grid(row=idx, column=2, padx=(5, 0), pady=(0, 6))
+
+
+    def _criar_campo_preces(self) -> None:
+        """Cria o campo de texto multilinha das preces padrão."""
         ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
-        self.text_preces = tk.Text(self.frame_recursos, height=7, width=40, wrap="word", font=("Segoe UI", 12), padx=10, pady=8, bd=1, relief="solid", bg="#23272e", fg="#f0f0f0", insertbackground="#f0f0f0")
-        self.text_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
-        self.text_preces.insert("1.0", self.configuracao.preces or "")
-        self.text_preces.bind("<FocusOut>", self._salvar_preces)
+        self.texto_preces = tk.Text(
+            self.frame_recursos,
+            height=7,
+            width=40,
+            wrap="word",
+            font=("Segoe UI", 12),
+            padx=10,
+            pady=8,
+            bd=1,
+            relief="solid",
+            bg="#23272e",
+            fg="#f0f0f0",
+            insertbackground="#f0f0f0",
+        )
+        self.texto_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.texto_preces.insert("1.0", self.configuracao.preces or "")
+        self.texto_preces.bind("<FocusOut>", self._salvar_preces)
 
-        # Campo PIX da Paróquia
+
+    def _criar_campo_pix(self) -> None:
+        """Cria o campo de texto da chave PIX da paróquia."""
         ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
-        self.text_pix = tk.Text(self.frame_recursos, height=2, width=40, wrap="word", font=("Segoe UI", 11), padx=8, pady=6, bd=1, relief="solid", bg="#f7f7f7")
-        self.text_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
-        self.text_pix.insert("1.0", self.configuracao.chave_pix or "")
-        self.text_pix.bind("<FocusOut>", self._salvar_pix)
-        self.btn_procurar = ttk.Button(
-            self.frame_config,
-            text="Procurar...",
-            command=self.escolher_pasta_saida,
-            width=12,
-            style="Principal.TButton"
+        self.texto_pix = tk.Text(
+            self.frame_recursos,
+            height=2,
+            width=40,
+            wrap="word",
+            font=("Segoe UI", 11),
+            padx=8,
+            pady=6,
+            bd=1,
+            relief="solid",
+            bg="#f7f7f7",
         )
+        self.texto_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.texto_pix.insert("1.0", self.configuracao.chave_pix or "")
+        self.texto_pix.bind("<FocusOut>", self._salvar_pix)
 
-        self.btn_procurar.grid(
-            row=2,
-            column=2,
-            padx=(10, 0),
-            pady=(0, 12),
-        )
-        # Botão
 
-        self.btn_preparar = ttk.Button(
-            self.frame_config,
-            text="Preparar transmissão",
-            command=self.preparar_transmissao,
-            width=22,
-            style="Principal.TButton"
-        )
+    def _criar_notebook(self) -> None:
+        """Cria o Notebook com as abas Relatório e Guia Operacional."""
+        self.notebook = ttk.Notebook(self.frame)
+        self.notebook.enable_traversal()
+        self.notebook.grid(row=2, column=0, sticky="nsew", pady=(15, 0))
 
-        self.btn_preparar.grid(
-            row=3,
-            column=0,
-            columnspan=1,
-            sticky="ew",
-            padx=(0,5),
-        )
-        #botão abrir pasta
-        self.btn_abrir_pasta = ttk.Button(
-            self.frame_config,
-            text="Abrir pasta",
-            command=self.abrir_pasta_saida,
-            width=18,
-            style="Principal.TButton"
-        )
-        self.btn_abrir_pasta.grid(
-            row=3,
-            column=1,
-            columnspan=2,
-            sticky="ew",
-            padx=(5,0),
-        )
-        # Área de saída
+        self.aba_relatorio = ttk.Frame(self.notebook)
+        self.aba_relatorio.columnconfigure(0, weight=1)
+        self.aba_relatorio.rowconfigure(0, weight=1)
+        self.notebook.add(self.aba_relatorio, text="Relatório")
 
+        self.aba_guia = ttk.Frame(self.notebook)
+        self.aba_guia.columnconfigure(0, weight=1)
+        self.aba_guia.rowconfigure(0, weight=1)
+        self.notebook.add(self.aba_guia, text="Guia Operacional")
+
+        self._criar_aba_relatorio()
+        self._criar_aba_guia()
+
+
+    def _criar_aba_relatorio(self) -> None:
+        """Cria a área de texto e a barra de rolagem da aba Relatório."""
         self.texto_saida = tk.Text(
             self.aba_relatorio,
             height=12,
@@ -611,22 +515,22 @@ class JanelaPrincipal(tk.Tk):
             bg="#f4f6fa",
             highlightthickness=1,
             highlightbackground="#bfc9d9",
-            highlightcolor="#bfc9d9"
+            highlightcolor="#bfc9d9",
         )
-
-        self.scroll_saida = ttk.Scrollbar(
-            self.aba_relatorio,
-            orient="vertical",
-            command=self.texto_saida.yview,
-        )
-
+        self.scroll_saida = ttk.Scrollbar(self.aba_relatorio, orient="vertical", command=self.texto_saida.yview)
         self.texto_saida.configure(
             state="disabled",
             yscrollcommand=self.scroll_saida.set,
             highlightthickness=1,
             highlightbackground="#cccccc",
-            highlightcolor="#cccccc"
+            highlightcolor="#cccccc",
         )
+        self.texto_saida.grid(row=0, column=0, sticky="nsew")
+        self.scroll_saida.grid(row=0, column=1, sticky="nsew")
+
+
+    def _criar_aba_guia(self) -> None:
+        """Cria a área de texto somente leitura da aba Guia Operacional."""
         self.texto_guia = tk.Text(
             self.aba_guia,
             wrap="word",
@@ -638,30 +542,11 @@ class JanelaPrincipal(tk.Tk):
             bg="#f4f6fa",
             highlightthickness=1,
             highlightbackground="#bfc9d9",
-            highlightcolor="#bfc9d9"
+            highlightcolor="#bfc9d9",
         )
-        self.texto_guia.insert(
-            "1.0",
-            GUIA_OPERACIONAL,
-        )
+        self.texto_guia.insert("1.0", GUIA_OPERACIONAL)
         self.texto_guia.config(state="disabled")
-
-        self.texto_guia.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-        self.texto_saida.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-
-        self.scroll_saida.grid(
-            row=0,
-            column=1,
-            sticky="nsew"
-        )
+        self.texto_guia.grid(row=0, column=0, sticky="nsew")
         
 def main() -> None:
     """Ponto de entrada."""
