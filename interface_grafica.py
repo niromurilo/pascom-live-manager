@@ -412,7 +412,44 @@ class JanelaPrincipal(tk.Tk):
         """Cria um par Label + Entry alinhado — padrão repetido em Celebrante e Paróquia."""
         ttk.Label(container, text=rotulo).grid(row=row, column=0, sticky="w", pady=(0, 6))
         ttk.Entry(container, textvariable=variavel).grid(row=row, column=1, sticky="ew", pady=(0, 12))
+    def _criar_texto_tematizado(
+        self,
+        container: tk.Widget,
+        *,
+        fonte: tuple,
+        height: int | None = None,
+        width: int | None = None,
+        padx: int = 12,
+        pady: int = 8,
+    ) -> tk.Text:
+        """Cria um widget tk.Text com o tema escuro aplicado.
 
+        tk.Text não tem equivalente ttk temizável via ttk.Style — por isso
+        essas cores são aplicadas diretamente aqui, numa função só, em vez
+        de repetidas nos 4 lugares que criam um Text no arquivo.
+        """
+        opcionais: dict = {}
+        if height is not None:
+            opcionais["height"] = height
+        if width is not None:
+            opcionais["width"] = width
+
+        return tk.Text(
+            container,
+            wrap="word",
+            font=fonte,
+            padx=padx,
+            pady=pady,
+            bd=1,
+            relief="solid",
+            bg=Tema.FUNDO_CAMPO,
+            fg=Tema.TEXTO,
+            insertbackground=Tema.TEXTO,
+            highlightthickness=1,
+            highlightbackground=Tema.BORDA,
+            highlightcolor=Tema.DESTAQUE,
+            **opcionais,
+        )
 
     def _criar_frame_recursos(self) -> None:
         """Cria a seção 'Recursos da Paróquia': logos, preces e PIX."""
@@ -442,19 +479,8 @@ class JanelaPrincipal(tk.Tk):
     def _criar_campo_preces(self) -> None:
         """Cria o campo de texto multilinha das preces padrão."""
         ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
-        self.texto_preces = tk.Text(
-            self.frame_recursos,
-            height=7,
-            width=40,
-            wrap="word",
-            font=("Segoe UI", 12),
-            padx=10,
-            pady=8,
-            bd=1,
-            relief="solid",
-            bg="#23272e",
-            fg="#f0f0f0",
-            insertbackground="#f0f0f0",
+        self.texto_preces = self._criar_texto_tematizado(
+            self.frame_recursos, fonte=("Segoe UI", 12), height=7, width=40
         )
         self.texto_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.texto_preces.insert("1.0", self.configuracao.preces or "")
@@ -464,17 +490,8 @@ class JanelaPrincipal(tk.Tk):
     def _criar_campo_pix(self) -> None:
         """Cria o campo de texto da chave PIX da paróquia."""
         ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
-        self.texto_pix = tk.Text(
-            self.frame_recursos,
-            height=2,
-            width=40,
-            wrap="word",
-            font=("Segoe UI", 11),
-            padx=8,
-            pady=6,
-            bd=1,
-            relief="solid",
-            bg="#f7f7f7",
+        self.texto_pix = self._criar_texto_tematizado(
+            self.frame_recursos, fonte=Tema.FONTE_PADRAO, height=2, width=40
         )
         self.texto_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.texto_pix.insert("1.0", self.configuracao.chave_pix or "")
@@ -503,47 +520,16 @@ class JanelaPrincipal(tk.Tk):
 
     def _criar_aba_relatorio(self) -> None:
         """Cria a área de texto e a barra de rolagem da aba Relatório."""
-        self.texto_saida = tk.Text(
-            self.aba_relatorio,
-            height=12,
-            wrap="word",
-            font=("Consolas", 11),
-            padx=16,
-            pady=10,
-            bd=1,
-            relief="solid",
-            bg="#f4f6fa",
-            highlightthickness=1,
-            highlightbackground="#bfc9d9",
-            highlightcolor="#bfc9d9",
-        )
+        self.texto_saida = self._criar_texto_tematizado(self.aba_relatorio, fonte=Tema.FONTE_MONO, height=12)
         self.scroll_saida = ttk.Scrollbar(self.aba_relatorio, orient="vertical", command=self.texto_saida.yview)
-        self.texto_saida.configure(
-            state="disabled",
-            yscrollcommand=self.scroll_saida.set,
-            highlightthickness=1,
-            highlightbackground="#cccccc",
-            highlightcolor="#cccccc",
-        )
+        self.texto_saida.configure(state="disabled", yscrollcommand=self.scroll_saida.set)
         self.texto_saida.grid(row=0, column=0, sticky="nsew")
         self.scroll_saida.grid(row=0, column=1, sticky="nsew")
 
 
     def _criar_aba_guia(self) -> None:
         """Cria a área de texto somente leitura da aba Guia Operacional."""
-        self.texto_guia = tk.Text(
-            self.aba_guia,
-            wrap="word",
-            font=("Segoe UI", 12),
-            padx=20,
-            pady=14,
-            bd=1,
-            relief="solid",
-            bg="#f4f6fa",
-            highlightthickness=1,
-            highlightbackground="#bfc9d9",
-            highlightcolor="#bfc9d9",
-        )
+        self.texto_guia = self._criar_texto_tematizado(self.aba_guia, fonte=("Segoe UI", 12), padx=20, pady=14)
         self.texto_guia.insert("1.0", GUIA_OPERACIONAL)
         self.texto_guia.config(state="disabled")
         self.texto_guia.grid(row=0, column=0, sticky="nsew")
