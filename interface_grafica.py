@@ -22,10 +22,10 @@ class Tema:
     declara um valor solto (objetivo de centralização).
     """
 
-    FUNDO = "#1e1f26"
-    FUNDO_PAINEL = "#262832"
-    FUNDO_CAMPO = "#2d3040"
-    BORDA = "#3a3d4d"
+    FUNDO = "#161b24"
+    FUNDO_PAINEL = "#1f2c47"
+    FUNDO_CAMPO = "#28395c"
+    BORDA = "#3d5580"
 
     TEXTO = "#e8e8ea"
     TEXTO_SECUNDARIO = "#9a9db0"
@@ -33,8 +33,8 @@ class Tema:
     DESTAQUE = "#4a7fc9"
     DESTAQUE_HOVER = "#5c8fd6"
 
-    ABA_ATIVA = "#2d3040"
-    ABA_INATIVA = "#1e1f26"
+    ABA_ATIVA = FUNDO_CAMPO
+    ABA_INATIVA = FUNDO
 
     FONTE_PADRAO = ("Segoe UI", 11)
     FONTE_SECAO = ("Segoe UI", 13, "bold")
@@ -45,7 +45,7 @@ class Tema:
 
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
-ALTURA = 550
+ALTURA = 900
 GUIA_OPERACIONAL = """
 Bem-vindo ao Pascom Live Manager!
 
@@ -134,7 +134,21 @@ class JanelaPrincipal(tk.Tk):
             background=Tema.FUNDO_PAINEL,
             foreground=Tema.TEXTO,
         )
-        estilo.configure("TEntry", font=Tema.FONTE_PADRAO, padding=3)
+        estilo.configure(
+            "TEntry",
+            font=Tema.FONTE_PADRAO,
+            padding=6,
+            fieldbackground=Tema.FUNDO_CAMPO,
+            foreground=Tema.TEXTO,
+            insertcolor=Tema.TEXTO,
+            borderwidth=1,
+            relief="flat",
+        )
+        estilo.map(
+            "TEntry",
+            fieldbackground=[("focus", Tema.FUNDO_CAMPO)],
+            bordercolor=[("focus", Tema.DESTAQUE), ("!focus", Tema.BORDA)],
+        )
 
         estilo.configure(
             "TButton",
@@ -166,18 +180,18 @@ class JanelaPrincipal(tk.Tk):
         )
 
         estilo.configure(
-            "TLabelFrame.Label",
+            "TLabelframe.Label",
             font=Tema.FONTE_SECAO,
             padding=8,
             background=Tema.FUNDO_PAINEL,
             foreground=Tema.TEXTO,
         )
         estilo.configure(
-            "TLabelFrame",
+            "TLabelframe",
             padding=18,
             background=Tema.FUNDO_PAINEL,
             borderwidth=1,
-            relief="groove",
+            relief="flat",  # "groove" no tema clam usa cores de baixo-relevo fixas, ignora fundo escuro customizado
         )
 
         # Abas maiores e mais legíveis — objetivo 8

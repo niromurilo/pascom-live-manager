@@ -15,18 +15,22 @@ from animated_lower_thirds import criar_lowers_da_liturgia, gerar_e_validar_json
 from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 from gerador_descricao import gerar_descricao, gerar_titulo, salvar_texto
 from resultado import Resultado
+from utils import caminho_assets
+from utils import caminho_output
 
-PASTA_SAIDA_PADRAO = Path("output")
+PASTA_SAIDA_PADRAO = caminho_output()
 NOME_ARQUIVO_JSON = "animated_lower_thirds_liturgia.json"
 NOME_ARQUIVO_TITULO = "titulo.txt"
 NOME_ARQUIVO_DESCRICAO = "descricao.txt"
 NOME_ARQUIVO_RESUMO = "resumo.txt"
-LOGOS = [
-    Path("assets") / "logo_pix.png",
-    Path("assets") / "logo_leituras.jpg",
-    Path("assets") / "logo_padre.jpg",
-]
 
+PASTA_ASSETS = caminho_assets()
+
+LOGOS = [
+    PASTA_ASSETS / "logo_pix.png",
+    PASTA_ASSETS / "logo_leituras.png",
+    PASTA_ASSETS / "logo_celebrante.png",
+]
 @dataclass(frozen=True)
 class ResultadoPreparacao(Resultado):
     """Resultado de preparar a transmissão inteira."""
