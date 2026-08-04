@@ -14,9 +14,38 @@ from services.preparacao import (
     executar_preparacao,
 )
 
+class Tema:
+    """Paleta de cores e fontes centralizada do tema escuro.
+
+    Único lugar que declara cor ou fonte em todo o arquivo — qualquer
+    widget que precisar de uma dessas propriedades lê daqui, nunca
+    declara um valor solto (objetivo de centralização).
+    """
+
+    FUNDO = "#161b24"
+    FUNDO_PAINEL = "#1f2c47"
+    FUNDO_CAMPO = "#28395c"
+    BORDA = "#3d5580"
+
+    TEXTO = "#e8e8ea"
+    TEXTO_SECUNDARIO = "#9a9db0"
+
+    DESTAQUE = "#4a7fc9"
+    DESTAQUE_HOVER = "#5c8fd6"
+
+    ABA_ATIVA = FUNDO_CAMPO
+    ABA_INATIVA = FUNDO
+
+    FONTE_PADRAO = ("Segoe UI", 11)
+    FONTE_SECAO = ("Segoe UI", 13, "bold")
+    FONTE_BOTAO = ("Segoe UI", 11, "bold")
+    FONTE_BOTAO_PRINCIPAL = ("Segoe UI", 13, "bold")
+    FONTE_ABA = ("Segoe UI", 12, "bold")
+    FONTE_MONO = ("Consolas", 11)
+
 TITULO_JANELA = "Pascom Live Manager"
 LARGURA = 700
-ALTURA = 550
+ALTURA = 900
 GUIA_OPERACIONAL = """
 Bem-vindo ao Pascom Live Manager!
 
@@ -87,15 +116,134 @@ class JanelaPrincipal(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
+        self._configurar_estilo()
         self.configuracao = carregar_configuracao()
         self._configurar_janela()
         self._criar_variaveis()
         self._criar_widgets()
 
+    def _configurar_estilo(self) -> None:
+        """Configura o tema escuro da interface, usando ttk.Style sempre que possível."""
+        estilo = ttk.Style()
+        estilo.theme_use("clam")
+
+        estilo.configure(
+            "TLabel",
+            font=Tema.FONTE_PADRAO,
+            padding=3,
+            background=Tema.FUNDO_PAINEL,
+            foreground=Tema.TEXTO,
+        )
+        estilo.configure(
+            "TEntry",
+            font=Tema.FONTE_PADRAO,
+            padding=6,
+            fieldbackground=Tema.FUNDO_CAMPO,
+            foreground=Tema.TEXTO,
+            insertcolor=Tema.TEXTO,
+            borderwidth=1,
+            relief="flat",
+        )
+        estilo.map(
+            "TEntry",
+            fieldbackground=[("focus", Tema.FUNDO_CAMPO)],
+            bordercolor=[("focus", Tema.DESTAQUE), ("!focus", Tema.BORDA)],
+        )
+
+        estilo.configure(
+            "TButton",
+            font=Tema.FONTE_BOTAO,
+            padding=8,
+            background=Tema.FUNDO_CAMPO,
+            foreground=Tema.TEXTO,
+            borderwidth=1,
+            relief="flat",
+        )
+        estilo.map(
+            "TButton",
+            background=[("active", Tema.DESTAQUE_HOVER), ("!active", Tema.FUNDO_CAMPO)],
+            foreground=[("active", Tema.TEXTO), ("!active", Tema.TEXTO)],
+        )
+
+        estilo.configure(
+            "Principal.TButton",
+            font=Tema.FONTE_BOTAO_PRINCIPAL,
+            padding=10,
+            background=Tema.DESTAQUE,
+            foreground=Tema.TEXTO,
+            borderwidth=0,
+            relief="flat",
+        )
+        estilo.map(
+            "Principal.TButton",
+            background=[("active", Tema.DESTAQUE_HOVER), ("!active", Tema.DESTAQUE)],
+        )
+
+        estilo.configure(
+            "TLabelframe.Label",
+            font=Tema.FONTE_SECAO,
+            padding=8,
+            background=Tema.FUNDO_PAINEL,
+            foreground=Tema.TEXTO,
+        )
+        estilo.configure(
+            "TLabelframe",
+            padding=18,
+            background=Tema.FUNDO_PAINEL,
+            borderwidth=1,
+            relief="flat",  # "groove" no tema clam usa cores de baixo-relevo fixas, ignora fundo escuro customizado
+        )
+
+        # Abas maiores e mais legíveis — objetivo 8
+        estilo.configure("TNotebook", tabposition="n", background=Tema.FUNDO, borderwidth=0)
+        estilo.configure(
+            "TNotebook.Tab",
+            font=Tema.FONTE_ABA,
+            padding=[24, 12],
+            background=Tema.ABA_INATIVA,
+            foreground=Tema.TEXTO_SECUNDARIO,
+            borderwidth=0,
+        )
+        estilo.map(
+            "TNotebook.Tab",
+            background=[("selected", Tema.ABA_ATIVA), ("!selected", Tema.ABA_INATIVA)],
+            foreground=[("selected", Tema.TEXTO), ("!selected", Tema.TEXTO_SECUNDARIO)],
+        )
+
+        estilo.configure("TFrame", background=Tema.FUNDO)
+        self.configure(bg=Tema.FUNDO)
+
     def _atualizar_label_logo(self, tipo: str):
+        import os
         caminho = getattr(self.configuracao, f'caminho_logo_{tipo}')
         label = getattr(self, f'label_logo_{tipo}')
-        label.config(text=str(caminho) if caminho else "Nenhum arquivo selecionado")
+        if caminho:
+            nome = os.path.basename(str(caminho))
+            label.config(text=f'✔ {nome}')
+            self._set_tooltip(label, str(caminho))
+        else:
+            label.config(text="Nenhum arquivo selecionado")
+            self._set_tooltip(label, "")
+
+    def _set_tooltip(self, widget, text):
+        # Simples tooltip usando bind
+        def on_enter(event):
+            if text:
+                self._tooltip = tk.Toplevel(widget)
+                self._tooltip.wm_overrideredirect(True)
+                x = widget.winfo_rootx() + 20
+                y = widget.winfo_rooty() + 20
+                self._tooltip.wm_geometry(f"+{x}+{y}")
+                label = tk.Label(self._tooltip, text=text, background="#ffffe0", relief="solid", borderwidth=1, font=("Segoe UI", 9))
+                label.pack()
+        def on_leave(event):
+            if hasattr(self, '_tooltip'):
+                self._tooltip.destroy()
+                self._tooltip = None
+        widget.unbind("<Enter>")
+        widget.unbind("<Leave>")
+        widget.bind("<Enter>", on_enter)
+        widget.bind("<Leave>", on_leave)
 
     def _selecionar_logo(self, tipo: str):
         arquivo = filedialog.askopenfilename(
@@ -108,11 +256,11 @@ class JanelaPrincipal(tk.Tk):
             self._atualizar_label_logo(tipo)
 
     def _salvar_preces(self, event=None):
-        self.configuracao.preces = self.text_preces.get("1.0", "end-1c")
+        self.configuracao.preces = self.texto_preces.get("1.0", "end-1c")
         salvar_configuracao(self.configuracao)
 
     def _salvar_pix(self, event=None):
-        self.configuracao.chave_pix = self.text_pix.get("1.0", "end-1c")
+        self.configuracao.chave_pix = self.texto_pix.get("1.0", "end-1c")
         salvar_configuracao(self.configuracao)
 
     def preparar_transmissao(self) -> None:
@@ -230,278 +378,175 @@ class JanelaPrincipal(tk.Tk):
         )
 
     def _criar_widgets(self) -> None:
-        """Cria os componentes da tela."""
+        """Cria os componentes da tela, delegando cada seção a um método próprio."""
+        self._criar_frame_principal()
+        self._criar_frame_config()
+        self._criar_frame_recursos()
+        self._criar_notebook()
 
-        self.frame = ttk.Frame(
-            self,
-            padding=20,
-        )
-        self.frame.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-        
-        self.frame_config = ttk.LabelFrame(
-            self.frame,
-            text=" Configurações da transmissão ",
-            padding=15,
-        )
-        self.notebook = ttk.Notebook(self.frame)
 
-        self.notebook.grid(
-            row=2,
-            column=0,
-            sticky="nsew",
-            pady=(15, 0),
-        )
-        self.aba_relatorio = ttk.Frame(self.notebook)
-        self.aba_guia = ttk.Frame(self.notebook)
-
-        self.aba_relatorio.columnconfigure(0, weight=1)
-        self.aba_relatorio.rowconfigure(0, weight=1)
-
-        self.aba_guia.columnconfigure(0, weight=1)
-        self.aba_guia.rowconfigure(0, weight=1)
-
-        self.notebook.add(
-            self.aba_relatorio,
-            text="Relatório",
-        )
-
-        self.notebook.add(
-            self.aba_guia,
-            text="Guia Operacional",
-        )
-        self.frame_config.grid(
-            row=0,
-            column=0,
-            sticky="ew",
-        )
-        self.frame_config.grid(
-            row=0,
-            column=0,
-            sticky="ew",
-        )
-
-        self.frame_recursos = ttk.LabelFrame(
-            self.frame,
-            text=" Recursos da Paróquia ",
-            padding=15,
-        )
-        self.frame_recursos.grid(
-            row=1,
-            column=0,
-            sticky="ew",
-            pady=(10, 0),
-        )
-
-        self.notebook.grid(
-            row=2,
-            column=0,
-            sticky="nsew",
-            pady=(15, 0),
-        )
-
+    def _criar_frame_principal(self) -> None:
+        """Cria o frame raiz que contém toda a interface."""
+        self.frame = ttk.Frame(self, padding=(8, 8, 8, 0))
+        self.frame.grid(row=0, column=0, sticky="nsew")
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(2, weight=1)
 
+
+    def _criar_frame_config(self) -> None:
+        """Cria a seção 'Configurações da transmissão': celebrante, paróquia, pasta e botões."""
+        self.frame_config = ttk.LabelFrame(self.frame, text=" Configurações da transmissão ", padding=20)
+        self.frame_config.grid(row=0, column=0, sticky="ew", pady=(0, 6))
         self.frame_config.columnconfigure(1, weight=1)
 
-        # Celebrante
+        self._criar_campo(self.frame_config, "Celebrante:", self.celebrante_var, row=0)
+        self._criar_campo(self.frame_config, "Paróquia:", self.paroquia_var, row=1)
 
-        ttk.Label(
-            self.frame_config,
-            text="Celebrante:",
-        ).grid(
-            row=0,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
+        ttk.Label(self.frame_config, text="Pasta de saída:").grid(row=2, column=0, sticky="w", pady=(0, 6))
+        self.entry_pasta_saida = ttk.Entry(self.frame_config, textvariable=self.pasta_saida_var)
+        self.entry_pasta_saida.grid(row=2, column=1, sticky="ew", pady=(0, 12))
 
-        ttk.Entry(
-            self.frame_config,
-            textvariable=self.celebrante_var,
-        ).grid(
-            row=0,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
-        )
-        # Paróquia
-
-        ttk.Label(
-            self.frame_config,
-            text="Paróquia:",
-        ).grid(
-            row=1,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-
-        ttk.Entry(
-            self.frame_config,
-            textvariable=self.paroquia_var,
-        ).grid(
-            row=1,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
-        )
-
-        # Pasta
-
-        ttk.Label(
-            self.frame_config,
-            text="Pasta de saída:",
-        ).grid(
-            row=2,
-            column=0,
-            sticky="w",
-            pady=(0, 6),
-        )
-
-        self.entry_pasta_saida = ttk.Entry(
-            self.frame_config,
-            textvariable=self.pasta_saida_var,
-        )
-
-        self.entry_pasta_saida.grid(
-            row=2,
-            column=1,
-            sticky="ew",
-            pady=(0, 12),
-        )
-        self.frame_recursos = ttk.LabelFrame(
-            self.frame,
-            text=" Recursos da Paróquia ",
-            padding=15,
-        )
-
-        self.frame_recursos.grid(
-            row=1,
-            column=0,
-            sticky="ew",
-            pady=(15, 0),
-        )
-                # Widgets para Logos
-        tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
-        for idx, (tipo, label_texto) in enumerate(tipos):
-            ttk.Label(self.frame_recursos, text=label_texto + ":").grid(row=idx, column=0, sticky="w")
-            label = ttk.Label(self.frame_recursos, text="", width=40)
-            label.grid(row=idx, column=1, sticky="w", padx=(5, 0))
-            setattr(self, f"label_logo_{tipo}", label)
-            self._atualizar_label_logo(tipo)
-            btn = ttk.Button(
-                self.frame_recursos,
-                text="Selecionar...",
-                command=lambda t=tipo: self._selecionar_logo(t)
-            )
-            btn.grid(row=idx, column=2, padx=(5, 0))
-
-        # Campo Preces
-        ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
-        self.text_preces = tk.Text(self.frame_recursos, height=4, width=40, wrap="word")
-        self.text_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
-        self.text_preces.insert("1.0", self.configuracao.preces or "")
-        self.text_preces.bind("<FocusOut>", self._salvar_preces)
-
-        # Campo PIX da Paróquia
-        ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
-        self.text_pix = tk.Text(self.frame_recursos, height=2, width=40, wrap="word")
-        self.text_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
-        self.text_pix.insert("1.0", self.configuracao.chave_pix or "")
-        self.text_pix.bind("<FocusOut>", self._salvar_pix)
         self.btn_procurar = ttk.Button(
-            self.frame_config,
-            text="Procurar...",
-            command=self.escolher_pasta_saida,
+            self.frame_config, text="Procurar...", command=self.escolher_pasta_saida, width=12, style="Principal.TButton"
         )
-
-        self.btn_procurar.grid(
-            row=2,
-            column=2,
-            padx=(10, 0),
-            pady=(0, 12),
-        )
-        # Botão
+        self.btn_procurar.grid(row=2, column=2, padx=(10, 0), pady=(0, 12))
 
         self.btn_preparar = ttk.Button(
-            self.frame_config,
-            text="Preparar transmissão",
-            command=self.preparar_transmissao,
+            self.frame_config, text="Preparar transmissão", command=self.preparar_transmissao, width=22, style="Principal.TButton"
         )
+        self.btn_preparar.grid(row=3, column=0, sticky="ew", padx=(0, 5))
 
-        self.btn_preparar.grid(
-            row=3,
-            column=0,
-            columnspan=1,
-            sticky="ew",
-            padx=(0,5),
-        )
-        #botão abrir pasta
         self.btn_abrir_pasta = ttk.Button(
-            self.frame_config,
-            text="Abrir pasta",
-            command=self.abrir_pasta_saida,
+            self.frame_config, text="Abrir pasta", command=self.abrir_pasta_saida, width=18, style="Principal.TButton"
         )
-        self.btn_abrir_pasta.grid(
-            row=3,
-            column=1,
-            columnspan=2,
-            sticky="ew",
-            padx=(5,0),
-        )
-        # Área de saída
+        self.btn_abrir_pasta.grid(row=3, column=1, columnspan=2, sticky="ew", padx=(5, 0))
 
-        self.texto_saida = tk.Text(
-            self.aba_relatorio,
-            height=12,
+
+    def _criar_campo(self, container: ttk.Frame, rotulo: str, variavel: tk.StringVar, row: int) -> None:
+        """Cria um par Label + Entry alinhado — padrão repetido em Celebrante e Paróquia."""
+        ttk.Label(container, text=rotulo).grid(row=row, column=0, sticky="w", pady=(0, 6))
+        ttk.Entry(container, textvariable=variavel).grid(row=row, column=1, sticky="ew", pady=(0, 12))
+    def _criar_texto_tematizado(
+        self,
+        container: tk.Widget,
+        *,
+        fonte: tuple,
+        height: int | None = None,
+        width: int | None = None,
+        padx: int = 12,
+        pady: int = 8,
+    ) -> tk.Text:
+        """Cria um widget tk.Text com o tema escuro aplicado.
+
+        tk.Text não tem equivalente ttk temizável via ttk.Style — por isso
+        essas cores são aplicadas diretamente aqui, numa função só, em vez
+        de repetidas nos 4 lugares que criam um Text no arquivo.
+        """
+        opcionais: dict = {}
+        if height is not None:
+            opcionais["height"] = height
+        if width is not None:
+            opcionais["width"] = width
+
+        return tk.Text(
+            container,
             wrap="word",
+            font=fonte,
+            padx=padx,
+            pady=pady,
+            bd=1,
+            relief="solid",
+            bg=Tema.FUNDO_CAMPO,
+            fg=Tema.TEXTO,
+            insertbackground=Tema.TEXTO,
+            highlightthickness=1,
+            highlightbackground=Tema.BORDA,
+            highlightcolor=Tema.DESTAQUE,
+            **opcionais,
         )
 
-        self.scroll_saida = ttk.Scrollbar(
-            self.aba_relatorio,
-            orient="vertical",
-            command=self.texto_saida.yview,
-        )
+    def _criar_frame_recursos(self) -> None:
+        """Cria a seção 'Recursos da Paróquia': logos, preces e PIX."""
+        self.frame_recursos = ttk.LabelFrame(self.frame, text=" Recursos da Paróquia ", padding=15)
+        self.frame_recursos.grid(row=1, column=0, sticky="ew", pady=(15, 0))
 
-        self.texto_saida.configure(
-            state="disabled",
-            font=("Consolas", 10),
-            yscrollcommand=self.scroll_saida.set,
+        self._criar_campos_logos()
+        self._criar_campo_preces()
+        self._criar_campo_pix()
+
+
+    def _criar_campos_logos(self) -> None:
+        """Cria as linhas de seleção dos 3 logos da paróquia (PIX, Leituras, Celebrante)."""
+        tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
+        for idx, (tipo, rotulo) in enumerate(tipos):
+            ttk.Label(self.frame_recursos, text=f"{rotulo}:").grid(row=idx, column=0, sticky="w", pady=(0, 6))
+
+            label = ttk.Label(self.frame_recursos, text="", width=40)
+            label.grid(row=idx, column=1, sticky="w", padx=(5, 0), pady=(0, 6))
+            setattr(self, f"label_logo_{tipo}", label)
+            self._atualizar_label_logo(tipo)
+
+            botao = ttk.Button(self.frame_recursos, text="Selecionar...", command=lambda t=tipo: self._selecionar_logo(t))
+            botao.grid(row=idx, column=2, padx=(5, 0), pady=(0, 6))
+
+
+    def _criar_campo_preces(self) -> None:
+        """Cria o campo de texto multilinha das preces padrão."""
+        ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
+        self.texto_preces = self._criar_texto_tematizado(
+            self.frame_recursos, fonte=("Segoe UI", 12), height=7, width=40
         )
-        self.texto_guia = tk.Text(
-            self.aba_guia,
-            wrap="word",
-            font=("Segoe UI", 10),
-            padx=10,
-            pady=10,
+        self.texto_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.texto_preces.insert("1.0", self.configuracao.preces or "")
+        self.texto_preces.bind("<FocusOut>", self._salvar_preces)
+
+
+    def _criar_campo_pix(self) -> None:
+        """Cria o campo de texto da chave PIX da paróquia."""
+        ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
+        self.texto_pix = self._criar_texto_tematizado(
+            self.frame_recursos, fonte=Tema.FONTE_PADRAO, height=2, width=40
         )
-        self.texto_guia.insert(
-            "1.0",
-            GUIA_OPERACIONAL,
-        )
+        self.texto_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
+        self.texto_pix.insert("1.0", self.configuracao.chave_pix or "")
+        self.texto_pix.bind("<FocusOut>", self._salvar_pix)
+
+
+    def _criar_notebook(self) -> None:
+        """Cria o Notebook com as abas Relatório e Guia Operacional."""
+        self.notebook = ttk.Notebook(self.frame)
+        self.notebook.enable_traversal()
+        self.notebook.grid(row=2, column=0, sticky="nsew", pady=(15, 0))
+
+        self.aba_relatorio = ttk.Frame(self.notebook)
+        self.aba_relatorio.columnconfigure(0, weight=1)
+        self.aba_relatorio.rowconfigure(0, weight=1)
+        self.notebook.add(self.aba_relatorio, text="Relatório")
+
+        self.aba_guia = ttk.Frame(self.notebook)
+        self.aba_guia.columnconfigure(0, weight=1)
+        self.aba_guia.rowconfigure(0, weight=1)
+        self.notebook.add(self.aba_guia, text="Guia Operacional")
+
+        self._criar_aba_relatorio()
+        self._criar_aba_guia()
+
+
+    def _criar_aba_relatorio(self) -> None:
+        """Cria a área de texto e a barra de rolagem da aba Relatório."""
+        self.texto_saida = self._criar_texto_tematizado(self.aba_relatorio, fonte=Tema.FONTE_MONO, height=12)
+        self.scroll_saida = ttk.Scrollbar(self.aba_relatorio, orient="vertical", command=self.texto_saida.yview)
+        self.texto_saida.configure(state="disabled", yscrollcommand=self.scroll_saida.set)
+        self.texto_saida.grid(row=0, column=0, sticky="nsew")
+        self.scroll_saida.grid(row=0, column=1, sticky="nsew")
+
+
+    def _criar_aba_guia(self) -> None:
+        """Cria a área de texto somente leitura da aba Guia Operacional."""
+        self.texto_guia = self._criar_texto_tematizado(self.aba_guia, fonte=("Segoe UI", 12), padx=20, pady=14)
+        self.texto_guia.insert("1.0", GUIA_OPERACIONAL)
         self.texto_guia.config(state="disabled")
-
-        self.texto_guia.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-        self.texto_saida.grid(
-            row=0,
-            column=0,
-            sticky="nsew",
-        )
-
-        self.scroll_saida.grid(
-            row=0,
-            column=1,
-            sticky="nsew"
-        )
+        self.texto_guia.grid(row=0, column=0, sticky="nsew")
         
 def main() -> None:
     """Ponto de entrada."""
