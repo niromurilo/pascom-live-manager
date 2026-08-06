@@ -9,7 +9,6 @@ CAMINHO_PADRAO_SAIDA = Path("output/animated_lower_thirds_liturgia.json")
 from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 
 from animated_lower_thirds import (
-    LowerThird,
     criar_lowers_da_liturgia,
     gerar_e_validar_json_dos_lowers,
     montar_resumo_dos_lowers
@@ -44,7 +43,12 @@ def main() -> None:
 
     from paroquia_config import carregar_configuracao
     config = carregar_configuracao()
-    lowers = criar_lowers_da_liturgia(liturgia, celebrante=args.celebrante, chave_pix=config.chave_pix)
+    lowers = criar_lowers_da_liturgia(
+        liturgia,
+        celebrante=args.celebrante,
+        chave_pix=config.chave_pix,
+        preces=config.preces,
+    )
 
     resultado_json = gerar_e_validar_json_dos_lowers(lowers, args.saida)
     if not resultado_json.sucesso:
@@ -53,17 +57,6 @@ def main() -> None:
 
     print(f"✅ {resultado_json.mensagem}\n")
     print(montar_resumo_dos_lowers(liturgia, lowers, args.saida))
-    print("\n➡️  Abra o painel do Animated Lower Thirds no OBS e clique em Import.")
-
-
-def _imprimir_resumo(liturgia: LiturgiaDoDia, lowers: list[LowerThird], caminho: Path) -> None:
-    """Mostra o que foi gerado, pra conferência antes do Import manual."""
-    print("✅ JSON gerado e validado com sucesso!\n")
-    print(f"   Título: {liturgia.titulo}")
-    for lower in lowers:
-        slot_txt = f" slot {lower.slot}" if lower.slot else ""
-        print(f"   Painel {lower.painel}{slot_txt} — {lower.nome}: {lower.info}")
-    print(f"\n   Arquivo: {caminho}")
     print("\n➡️  Abra o painel do Animated Lower Thirds no OBS e clique em Import.")
 
 if __name__ == "__main__":

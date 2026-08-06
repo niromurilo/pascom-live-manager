@@ -11,11 +11,15 @@ from dataclasses import dataclass
 from datetime import date
 from pathlib import Path
 from shutil import copy2
-from animated_lower_thirds import criar_lowers_da_liturgia, gerar_e_validar_json_dos_lowers, montar_resumo_dos_lowers
+from animated_lower_thirds import (
+    criar_lowers_da_liturgia,
+    gerar_e_validar_json_dos_lowers,
+    montar_resumo_dos_lowers,
+)
 from buscar_liturgia import URL_LITURGIA, buscar_liturgia
 from gerador_descricao import gerar_descricao, gerar_titulo, salvar_texto
+from paroquia_config import ConfiguracaoParoquia, carregar_configuracao
 from resultado import Resultado
-from utils import caminho_assets
 from utils import caminho_output
 
 PASTA_SAIDA_PADRAO = caminho_output()
@@ -24,13 +28,13 @@ NOME_ARQUIVO_TITULO = "titulo.txt"
 NOME_ARQUIVO_DESCRICAO = "descricao.txt"
 NOME_ARQUIVO_RESUMO = "resumo.txt"
 
-PASTA_ASSETS = caminho_assets()
+LOGOS_CONFIGURADOS = (
+    ("Logo PIX", "caminho_logo_pix", "logo_pix"),
+    ("Logo Leituras", "caminho_logo_leituras", "logo_leituras"),
+    ("Logo Celebrante", "caminho_logo_celebrante", "logo_celebrante"),
+)
 
-LOGOS = [
-    PASTA_ASSETS / "logo_pix.png",
-    PASTA_ASSETS / "logo_leituras.png",
-    PASTA_ASSETS / "logo_celebrante.png",
-]
+
 @dataclass(frozen=True)
 class ResultadoPreparacao(Resultado):
     """Resultado de preparar a transmissão inteira."""
@@ -59,12 +63,18 @@ def executar_preparacao(
     if not resultado_busca.sucesso:
         return ResultadoPreparacao(sucesso=False, mensagem=resultado_busca.mensagem)
     liturgia = resultado_busca.liturgia
+    if liturgia is None:
+        return ResultadoPreparacao(sucesso=False, mensagem="Liturgia não retornou dados para preparar a transmissão.")
 
     hoje = date.today()
     caminho_json = pasta_saida / NOME_ARQUIVO_JSON
-    from paroquia_config import carregar_configuracao
     config = carregar_configuracao()
-    lowers = criar_lowers_da_liturgia(liturgia, celebrante=celebrante, chave_pix=config.chave_pix)
+    lowers = criar_lowers_da_liturgia(
+        liturgia,
+        celebrante=celebrante,
+        chave_pix=config.chave_pix,
+        preces=config.preces,
+    )
     resultado_json = gerar_e_validar_json_dos_lowers(lowers, caminho_json)
     if not resultado_json.sucesso:
         return ResultadoPreparacao(sucesso=False, mensagem=resultado_json.mensagem)
@@ -80,25 +90,23 @@ def executar_preparacao(
     except OSError as erro:
         return ResultadoPreparacao(sucesso=False, mensagem=f"Problema ao salvar título/descrição: {erro}")
 
-    # Copia o logo para a pasta de saída
     try:
-        print(LOGOS)
-        for logo in LOGOS: 
-            if logo.exists():
-                destino = pasta_saida / logo.name
-                copy2(logo, destino)
-
-    except OSError as erro:
+        logos_copiados = copiar_logos_configurados(config, pasta_saida)
+    except (OSError, ValueError) as erro:
         return ResultadoPreparacao(
             sucesso=False,
             mensagem=f"Problema ao copiar os logos: {erro}",
         )
     caminho_resumo = pasta_saida / NOME_ARQUIVO_RESUMO
-    relatorio = "\n\n".join([
-        f"TÍTULO DO VÍDEO:\n{titulo}",
-        f"DESCRIÇÃO DO VÍDEO:\n{descricao}",
-        f"LOWER THIRDS:\n{montar_resumo_dos_lowers(liturgia, lowers, caminho_json)}",
-        f"Arquivos gerados em: {pasta_saida}/",])
+    relatorio = "\n\n".join(
+        [
+            f"TÍTULO DO VÍDEO:\n{titulo}",
+            f"DESCRIÇÃO DO VÍDEO:\n{descricao}",
+            f"LOWER THIRDS:\n{montar_resumo_dos_lowers(liturgia, lowers, caminho_json)}",
+            f"LOGOS COPIADOS:\n{montar_resumo_dos_logos(logos_copiados)}",
+            f"Arquivos gerados em: {pasta_saida}/",
+        ]
+    )
 
     try:
         salvar_texto(relatorio, caminho_resumo)
@@ -111,3 +119,35 @@ def executar_preparacao(
         relatorio=relatorio,
         pasta_saida=pasta_saida,
     )
+
+
+def copiar_logos_configurados(configuracao: ConfiguracaoParoquia, pasta_saida: Path) -> list[Path]:
+    """Copia para a saída os logos escolhidos na configuração da paróquia."""
+    pasta_saida.mkdir(parents=True, exist_ok=True)
+    destinos: list[Path] = []
+
+    for rotulo, atributo, nome_saida in LOGOS_CONFIGURADOS:
+        origem = getattr(configuracao, atributo)
+        if origem is None:
+            continue
+
+        if not origem.exists():
+            raise ValueError(f"{rotulo} configurado não existe: {origem}")
+        if not origem.is_file():
+            raise ValueError(f"{rotulo} configurado não é um arquivo: {origem}")
+
+        destino = pasta_saida / f"{nome_saida}{origem.suffix.lower()}"
+        if origem.resolve() != destino.resolve():
+            copy2(origem, destino)
+
+        destinos.append(destino)
+
+    return destinos
+
+
+def montar_resumo_dos_logos(logos_copiados: list[Path]) -> str:
+    """Monta o resumo dos logos copiados para o relatório final."""
+    if not logos_copiados:
+        return "Nenhum logo configurado."
+
+    return "\n".join(f"- {logo.name}" for logo in logos_copiados)

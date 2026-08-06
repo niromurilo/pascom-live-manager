@@ -38,11 +38,12 @@ class LowerThird:
 def criar_lowers_da_liturgia(
     liturgia: LiturgiaDoDia,
     celebrante: str | None = None,
-    chave_pix: str = ""
+    chave_pix: str = "",
+    preces: str = "",
 ) -> list[LowerThird]:
     """Cria os lowers disponiveis a partir dos dados extraidos da liturgia."""
     lower_titulo = _criar_lower_titulo(liturgia, celebrante)
-    sequencia_de_leituras = _criar_sequencia_de_leituras(liturgia)
+    sequencia_de_leituras = _criar_sequencia_de_leituras(liturgia, preces=preces)
     lower_pix = LowerThird(painel=3, nome="PIX DA PARÓQUIA", info=chave_pix)
 
     return [lower_titulo, *sequencia_de_leituras, lower_pix]
@@ -95,13 +96,10 @@ def _criar_lower_titulo(
     return LowerThird(painel=PAINEL_TITULO, nome="Liturgia Diaria", info=liturgia.titulo)
 
 
-def _criar_sequencia_de_leituras(liturgia: LiturgiaDoDia) -> list[LowerThird]:
+def _criar_sequencia_de_leituras(liturgia: LiturgiaDoDia, preces: str = "") -> list[LowerThird]:
     """Monta a sequencia de leituras no painel 2, um slot por item, na ordem da missa.
     Adiciona PRECES como último slot se houver resposta cadastrada.
     """
-    from paroquia_config import carregar_configuracao
-    config = carregar_configuracao()
-
     sequencia = [
         LowerThird(
             painel=PAINEL_LEITURAS,
@@ -139,8 +137,7 @@ def _criar_sequencia_de_leituras(liturgia: LiturgiaDoDia) -> list[LowerThird]:
     )
     proximo_slot += 1
 
-    # Adiciona PRECES se houver resposta cadastrada
-    preces = (config.preces or "").strip()
+    preces = preces.strip()
     if preces:
         sequencia.append(
             LowerThird(
