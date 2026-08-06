@@ -12,7 +12,9 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 from utils import pasta_dados_usuario
 
-CAMINHO_ARQUIVO = pasta_dados_usuario() / "configuracao_paroquia.json"
+CAMINHO_ARQUIVO = (
+    pasta_dados_usuario() / "configuracao_paroquia.json"
+)
 
 
 @dataclass

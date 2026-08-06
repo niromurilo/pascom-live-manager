@@ -44,7 +44,7 @@ def pasta_dados_usuario() -> Path:
     No executável:
         Documentos/Pascom Live Manager
     """
-
+    
     if getattr(sys, "frozen", False):
         documentos = Path.home() / "Documents" / "Pascom Live Manager"
         documentos.mkdir(parents=True, exist_ok=True)

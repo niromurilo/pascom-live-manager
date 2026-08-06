@@ -9,6 +9,8 @@
 secrets/
 config.local.*
 *.local.json
+configuracao_paroquia.json
+dados/configuracao_paroquia.json
 
 # Ambientes virtuais e dependencias locais
 .venv/
@@ -49,6 +51,3 @@ AGENTS.md
 .gemini/
 .claude/
 .codex/
-
-.env
-configuracao_paroquial.json

@@ -9,6 +9,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 import os
 from config import NOME_PAROQUIA
+from utils import caminho_assets
 from services.preparacao import (
     PASTA_SAIDA_PADRAO,
     executar_preparacao,
@@ -48,21 +49,15 @@ LARGURA = 700
 ALTURA = 900
 GUIA_OPERACIONAL = """
 Bem-vindo ao Pascom Live Manager!
-
 Este programa automatiza a preparação dos arquivos utilizados na transmissão da Santa Missa.
-
-Primeira utilização
-
+Primeira utilização:
 Antes da primeira transmissão, configure os recursos da sua paróquia na seção Recursos da Paróquia.
-
 Selecione:
-
 • Logo PIX
 • Logo Leituras
 • Logo Celebrante
 
 Depois, preencha o campo Preces com o texto padrão utilizado pela sua paróquia.
-
 Essas configurações são salvas automaticamente e não precisam ser configuradas novamente, exceto quando desejar alterá-las.
 
 Preparando uma transmissão
@@ -72,38 +67,28 @@ Escolha a pasta onde os arquivos serão salvos.
 Clique em Preparar transmissão.
 
 Após alguns segundos, todos os arquivos necessários serão gerados automaticamente.
-
-Arquivos gerados
-
 O programa gera automaticamente:
-
 • Título da transmissão
 • Descrição para YouTube/Facebook
 • Lower Thirds (JSON)
 • Resumo da transmissão
 
 Também copia para a pasta de saída:
-
 • Logo PIX
 • Logo Leituras
 • Logo Celebrante
 
-Alterando configurações
-
+Alterando configurações:
 Sempre que desejar alterar algum recurso:
-
 • Clique em Selecionar... ao lado do logo correspondente.
 
 Para alterar as preces:
-
 • Edite o campo Preces.
 
 Todas as alterações são salvas automaticamente.
 
 Em caso de erro
-
 Verifique:
-
 • Se há conexão com a internet.
 • Se os logos selecionados ainda existem no computador.
 • A mensagem exibida na aba Relatório.
@@ -116,6 +101,10 @@ class JanelaPrincipal(tk.Tk):
 
     def __init__(self) -> None:
         super().__init__()
+        try:
+            self.iconbitmap(caminho_assets() / "icon.ico")
+        except Exception:
+            pass
         self._configurar_estilo()
         self.configuracao = carregar_configuracao()
         self._configurar_janela()
@@ -357,10 +346,11 @@ class JanelaPrincipal(tk.Tk):
 
     def _configurar_janela(self) -> None:
         """Configura a janela."""
-
         self.title(TITULO_JANELA)
         self.geometry(f"{LARGURA}x{ALTURA}")
         self.minsize(LARGURA, ALTURA)
+        self.update_idletasks()
+        self.state("zoomed")  # abre maximizada — usa a altura real da tela, não um valor fixo que pode não caber
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
@@ -387,8 +377,13 @@ class JanelaPrincipal(tk.Tk):
 
     def _criar_frame_principal(self) -> None:
         """Cria o frame raiz que contém toda a interface."""
+
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
         self.frame = ttk.Frame(self, padding=(8, 8, 8, 0))
         self.frame.grid(row=0, column=0, sticky="nsew")
+
         self.frame.columnconfigure(0, weight=1)
         self.frame.rowconfigure(2, weight=1)
 
@@ -466,10 +461,82 @@ class JanelaPrincipal(tk.Tk):
         )
 
     def _criar_frame_recursos(self) -> None:
-        """Cria a seção 'Recursos da Paróquia': logos, preces e PIX."""
-        self.frame_recursos = ttk.LabelFrame(self.frame, text=" Recursos da Paróquia ", padding=15)
-        self.frame_recursos.grid(row=1, column=0, sticky="ew", pady=(15, 0))
+        """Cria a seção 'Recursos da Paróquia'."""
 
+        self.frame_recursos = ttk.LabelFrame(
+            self.frame,
+            text=" Recursos da Paróquia ",
+            padding=15,
+        )
+
+        self.frame_recursos.grid(
+            row=1,
+            column=0,
+            sticky="ew",
+            pady=(15, 0),
+        )
+
+        self.frame_recursos.columnconfigure(0, weight=1)
+
+        # Canvas que permitirá rolagem futuramente
+        self.canvas_recursos = tk.Canvas(
+            self.frame_recursos,
+            bg=Tema.FUNDO_PAINEL,
+            highlightthickness=0,
+            bd=0,
+        )
+
+        self.scroll_recursos = ttk.Scrollbar(
+            self.frame_recursos,
+            orient="vertical",
+            command=self.canvas_recursos.yview,
+        )
+
+        self.canvas_recursos.configure(
+            yscrollcommand=self.scroll_recursos.set
+        )
+
+        self.canvas_recursos.grid(
+            row=0,
+            column=0,
+            sticky="nsew",
+        )
+
+        self.scroll_recursos.grid(
+            row=0,
+            column=1,
+            sticky="ns",
+        )
+
+        # Frame onde ficarão os widgets
+        self.frame_recursos_interno = ttk.Frame(self.canvas_recursos)
+
+        self.frame_recursos_interno.columnconfigure(0, weight=0)
+        self.frame_recursos_interno.columnconfigure(1, weight=1)
+        self.frame_recursos_interno.columnconfigure(2, weight=0)
+
+        self.canvas_window = self.canvas_recursos.create_window(
+            (0, 0),
+            window=self.frame_recursos_interno,
+            anchor="nw",
+        )
+
+        self.frame_recursos_interno.bind(
+            "<Configure>",
+            lambda e: self.canvas_recursos.configure(
+                scrollregion=self.canvas_recursos.bbox("all")
+            ),
+        )
+
+        def ajustar_largura_canvas(event):
+            self.canvas_recursos.itemconfigure(
+                self.canvas_window,
+                width=event.width,
+            )
+
+        self.canvas_recursos.bind("<Configure>", ajustar_largura_canvas)
+
+        # Continua igual por enquanto
         self._criar_campos_logos()
         self._criar_campo_preces()
         self._criar_campo_pix()
@@ -479,22 +546,22 @@ class JanelaPrincipal(tk.Tk):
         """Cria as linhas de seleção dos 3 logos da paróquia (PIX, Leituras, Celebrante)."""
         tipos = [("pix", "Logo PIX"), ("leituras", "Logo Leituras"), ("celebrante", "Logo Celebrante")]
         for idx, (tipo, rotulo) in enumerate(tipos):
-            ttk.Label(self.frame_recursos, text=f"{rotulo}:").grid(row=idx, column=0, sticky="w", pady=(0, 6))
+            ttk.Label(self.frame_recursos_interno, text=f"{rotulo}:").grid(row=idx, column=0, sticky="w", pady=(0, 6))
 
-            label = ttk.Label(self.frame_recursos, text="", width=40)
-            label.grid(row=idx, column=1, sticky="w", padx=(5, 0), pady=(0, 6))
+            label = ttk.Label(self.frame_recursos_interno, text="", width=40)
+            label.grid(row=idx, column=1, sticky="ew", padx=(8, 8), pady=(0, 6))
             setattr(self, f"label_logo_{tipo}", label)
             self._atualizar_label_logo(tipo)
 
-            botao = ttk.Button(self.frame_recursos, text="Selecionar...", command=lambda t=tipo: self._selecionar_logo(t))
-            botao.grid(row=idx, column=2, padx=(5, 0), pady=(0, 6))
+            botao = ttk.Button(self.frame_recursos_interno, text="Selecionar...", command=lambda t=tipo: self._selecionar_logo(t))
+            botao.grid(row=idx, column=2, sticky="w", padx=(0, 0), pady=(0, 6))
 
 
     def _criar_campo_preces(self) -> None:
         """Cria o campo de texto multilinha das preces padrão."""
-        ttk.Label(self.frame_recursos, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
+        ttk.Label(self.frame_recursos_interno, text="Preces:").grid(row=3, column=0, sticky="nw", pady=(10, 0))
         self.texto_preces = self._criar_texto_tematizado(
-            self.frame_recursos, fonte=("Segoe UI", 12), height=7, width=40
+            self.frame_recursos_interno, fonte=("Segoe UI", 12), height=1, width=40
         )
         self.texto_preces.grid(row=3, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.texto_preces.insert("1.0", self.configuracao.preces or "")
@@ -503,9 +570,9 @@ class JanelaPrincipal(tk.Tk):
 
     def _criar_campo_pix(self) -> None:
         """Cria o campo de texto da chave PIX da paróquia."""
-        ttk.Label(self.frame_recursos, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
+        ttk.Label(self.frame_recursos_interno, text="PIX da Paróquia:").grid(row=4, column=0, sticky="nw", pady=(10, 0))
         self.texto_pix = self._criar_texto_tematizado(
-            self.frame_recursos, fonte=Tema.FONTE_PADRAO, height=2, width=40
+            self.frame_recursos_interno, fonte=Tema.FONTE_PADRAO, height=1, width=40
         )
         self.texto_pix.grid(row=4, column=1, columnspan=2, sticky="ew", pady=(10, 0))
         self.texto_pix.insert("1.0", self.configuracao.chave_pix or "")
