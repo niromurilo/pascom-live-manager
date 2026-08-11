@@ -1,7 +1,7 @@
-VERSÃO 1.0
+VERSÃO 1.0.0
 
 ☑ Interface gráfica
-☐ Revisar interface_grafica.py
+☑ Revisar interface_grafica.py
 ☐ Revisar services/preparacao.py
 ☐ Revisar animated_lower_thirds.py
 ☐ Revisar buscar_liturgia.py
