@@ -20,13 +20,13 @@ Automatizar tarefas repetitivas da preparação das transmissões ao vivo, reduz
 ## Estrutura de Pastas
 
 .
-├── services/ # Serviços de orquestração
-│ └── preparacao.py
-├── tests/ # Testes automatizados
-├── assets/ # Logos e ícones padrão
-├── output/ # Arquivos gerados para a transmissão (auto-gerado)
-├── docs/ # Documentação detalhada
-├── Installer/ # Scripts do instalador (Inno Setup)
+├── services/             # Serviços de orquestração
+│   └── preparacao.py
+├── tests/                # Testes automatizados
+├── assets/               # Logos e ícones padrão
+├── output/               # Arquivos gerados para a transmissão (auto-gerado)
+├── docs/                 # Documentação detalhada
+├── Installer/            # Scripts do instalador (Inno Setup)
 ├── README.md
 ├── requirements.txt
 ├── config.py
