@@ -1,5 +1,7 @@
 # Pascom Live Manager
 
+![Tests](https://github.com/niromurilo/pascom-live-manager/actions/workflows/tests.yml/badge.svg)
+
 Sistema em Python para automatizar a preparação das transmissões da PASCOM utilizando OBS Studio e Animated Lower Thirds.
 
 ## Objetivo
