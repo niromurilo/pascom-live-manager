@@ -32,7 +32,7 @@ Automatizar tarefas repetitivas da preparação das transmissões ao vivo, reduz
 ├── config.py
 ├── configuracao_paroquia.example.json
 └── ...
-'''
+```
 
 ## Instalação
 
