@@ -18,7 +18,7 @@ Automatizar tarefas repetitivas da preparação das transmissões ao vivo, reduz
 - Testes automatizados
 
 ## Estrutura de Pastas
-
+```bash
 .
 ├── services/             # Serviços de orquestração
 │   └── preparacao.py
@@ -32,7 +32,7 @@ Automatizar tarefas repetitivas da preparação das transmissões ao vivo, reduz
 ├── config.py
 ├── configuracao_paroquia.example.json
 └── ...
-
+'''
 
 ## Instalação
 
