@@ -92,11 +92,11 @@ pytest tests/
 
 ## Roadmap
 
-- [ ] Revisar interface gráfica
-- [ ] Revisar e refatorar módulos principais
-- [ ] Remover prints e código morto
-- [ ] Gerar executável e instalador
-- [ ] Melhorar documentação e exemplos
+- [x] Revisar interface gráfica
+- [x] Revisar e refatorar módulos principais
+- [x] Remover prints e código morto
+- [x] Gerar executável e instalador
+- [x] Melhorar documentação e exemplos
 
 Veja o arquivo `TODO.md` e a pasta `docs/` para detalhes.
 
