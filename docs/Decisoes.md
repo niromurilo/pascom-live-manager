@@ -159,3 +159,18 @@ Alternativas:
 - CustomTkinter
 
 Foram adiadas para versões futuras.
+
+## 11. Remoção de arquivos órfãos: sprint1_titulo.py e verificar_site.py
+
+**Decisão:** remover os dois da árvore atual do projeto.
+
+**Motivo:** nenhum dos dois é importado por main.py, direta ou
+indiretamente — confirmado por análise de todo o repositório.
+verificar_site.py era ferramenta de investigação pontual (mesma
+categoria de pagina_liturgia.html, já removido antes).
+sprint1_titulo.py foi o primeiro código funcional do projeto
+(Sprint 1), superado quando a arquitetura migrou de fontes de
+texto simples do OBS para o Animated Lower Thirds.
+
+**Risco assumido:** nenhum — os dois continuam acessíveis pelo
+histórico do Git, só saem da árvore de trabalho atual.
