@@ -21,18 +21,32 @@ def pasta_projeto() -> Path:
 
 def caminho_assets() -> Path:
     """
-    Retorna a pasta assets.
-    """
+    Retorna a pasta assets — recurso empacotado pelo PyInstaller.
 
+    Rodando como .exe, assets fica dentro de _internal/, não ao lado do
+    executável — por isso usa sys._MEIPASS aqui, não pasta_projeto().
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS) / "assets"
     return pasta_projeto() / "assets"
 
 
 def caminho_output() -> Path:
     """
-    Retorna a pasta output.
-    """
+    Retorna a pasta onde os arquivos gerados são salvos.
 
-    return pasta_projeto() / "output"
+    Empacotado, usa Documentos do usuário (mesma lógica de
+    pasta_dados_usuario) — escrever dentro da pasta de instalação pode
+    falhar por permissão (ex: Program Files), e escrever dentro de
+    _internal misturaria dado gerado com recurso empacotado, somente leitura.
+    """
+    if getattr(sys, "frozen", False):
+        pasta = Path.home() / "Documents" / "Pascom Live Manager" / "output"
+    else:
+        pasta = pasta_projeto() / "output"
+
+    pasta.mkdir(parents=True, exist_ok=True)
+    return pasta
 
 def pasta_dados_usuario() -> Path:
     """

@@ -36,6 +36,8 @@ logs/
 output/
 build/
 dist/
+browser-source.html
+control-panel.html
 
 # Configuracoes pessoais de editor/IDE
 .vscode/
