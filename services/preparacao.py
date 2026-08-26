@@ -12,6 +12,9 @@ from datetime import date
 from pathlib import Path
 from shutil import copy2
 from animated_lower_thirds import (
+    PAINEL_LEITURAS,
+    PAINEL_PIX,
+    PAINEL_TITULO,
     criar_lowers_da_liturgia,
     gerar_e_validar_json_dos_lowers,
     montar_resumo_dos_lowers,
@@ -29,12 +32,16 @@ NOME_ARQUIVO_DESCRICAO = "descricao.txt"
 NOME_ARQUIVO_RESUMO = "resumo.txt"
 
 LOGOS_CONFIGURADOS = (
-    ("Logo PIX", "caminho_logo_pix", "logo_pix"),
-    ("Logo Leituras", "caminho_logo_leituras", "logo_leituras"),
-    ("Logo Celebrante", "caminho_logo_celebrante", "logo_celebrante"),
+    ("Logo PIX", "caminho_logo_pix", "logo_pix", PAINEL_PIX),
+    ("Logo Leituras", "caminho_logo_leituras", "logo_leituras", PAINEL_LEITURAS),
+    ("Logo Celebrante", "caminho_logo_celebrante", "logo_celebrante", PAINEL_TITULO),
 )
-
-
+LOGOS_GERADOS_ANTIGOS = ("logo_pix", "logo_leituras", "logo_celebrante", "logo_padre")
+PAINEL_POR_LOGO_GERADO = {
+    "logo_pix": PAINEL_PIX,
+    "logo_leituras": PAINEL_LEITURAS,
+    "logo_celebrante": PAINEL_TITULO,
+}
 @dataclass(frozen=True)
 class ResultadoPreparacao(Resultado):
     """Resultado de preparar a transmissão inteira."""
@@ -75,21 +82,6 @@ def executar_preparacao(
         chave_pix=config.chave_pix,
         preces=config.preces,
     )
-    resultado_json = gerar_e_validar_json_dos_lowers(lowers, caminho_json)
-    if not resultado_json.sucesso:
-        return ResultadoPreparacao(sucesso=False, mensagem=resultado_json.mensagem)
-
-    titulo = gerar_titulo(liturgia, hoje)
-    descricao = gerar_descricao(liturgia, hoje, nome_paroquia=nome_paroquia, celebrante=celebrante)
-    caminho_titulo = pasta_saida / NOME_ARQUIVO_TITULO
-    caminho_descricao = pasta_saida / NOME_ARQUIVO_DESCRICAO
-    
-    try:
-        salvar_texto(titulo, caminho_titulo)
-        salvar_texto(descricao, caminho_descricao)
-    except OSError as erro:
-        return ResultadoPreparacao(sucesso=False, mensagem=f"Problema ao salvar título/descrição: {erro}")
-
     try:
         logos_copiados = copiar_logos_configurados(config, pasta_saida)
     except (OSError, ValueError) as erro:
@@ -97,6 +89,26 @@ def executar_preparacao(
             sucesso=False,
             mensagem=f"Problema ao copiar os logos: {erro}",
         )
+
+    logos_por_painel = montar_logos_por_painel(logos_copiados)
+    resultado_json = gerar_e_validar_json_dos_lowers(
+        lowers,
+        caminho_json,
+        logos_por_painel=logos_por_painel,
+    )
+    if not resultado_json.sucesso:
+        return ResultadoPreparacao(sucesso=False, mensagem=resultado_json.mensagem)
+
+    titulo = gerar_titulo(liturgia, hoje)
+    descricao = gerar_descricao(liturgia, hoje, nome_paroquia=nome_paroquia, celebrante=celebrante)
+    caminho_titulo = pasta_saida / NOME_ARQUIVO_TITULO
+    caminho_descricao = pasta_saida / NOME_ARQUIVO_DESCRICAO
+
+    try:
+        salvar_texto(titulo, caminho_titulo)
+        salvar_texto(descricao, caminho_descricao)
+    except OSError as erro:
+        return ResultadoPreparacao(sucesso=False, mensagem=f"Problema ao salvar título/descrição: {erro}")
     caminho_resumo = pasta_saida / NOME_ARQUIVO_RESUMO
     relatorio = "\n\n".join(
         [
@@ -124,9 +136,11 @@ def executar_preparacao(
 def copiar_logos_configurados(configuracao: ConfiguracaoParoquia, pasta_saida: Path) -> list[Path]:
     """Copia para a saída os logos escolhidos na configuração da paróquia."""
     pasta_saida.mkdir(parents=True, exist_ok=True)
+    origens_configuradas = _origens_de_logos_configuradas(configuracao)
+    limpar_logos_gerados_antigos(pasta_saida, preservar=origens_configuradas)
     destinos: list[Path] = []
 
-    for rotulo, atributo, nome_saida in LOGOS_CONFIGURADOS:
+    for rotulo, atributo, nome_saida, _painel in LOGOS_CONFIGURADOS:
         origem = getattr(configuracao, atributo)
         if origem is None:
             continue
@@ -144,6 +158,45 @@ def copiar_logos_configurados(configuracao: ConfiguracaoParoquia, pasta_saida: P
 
     return destinos
 
+
+
+def _origens_de_logos_configuradas(configuracao: ConfiguracaoParoquia) -> set[Path]:
+    origens: set[Path] = set()
+    for _rotulo, atributo, _nome_saida, _painel in LOGOS_CONFIGURADOS:
+        origem = getattr(configuracao, atributo)
+        if origem is not None:
+            origens.add(origem.resolve())
+    return origens
+
+
+
+def limpar_logos_gerados_antigos(pasta_saida: Path, preservar: set[Path] | None = None) -> None:
+    """Remove apenas logos gerados anteriormente dentro da pasta de saída."""
+    if not pasta_saida.exists():
+        return
+
+    preservar = preservar or set()
+    pasta_saida_resolvida = pasta_saida.resolve()
+    for nome_logo in LOGOS_GERADOS_ANTIGOS:
+        for caminho in pasta_saida.glob(f"{nome_logo}.*"):
+            caminho_resolvido = caminho.resolve()
+            if caminho_resolvido in preservar:
+                continue
+            if caminho_resolvido.parent != pasta_saida_resolvida:
+                continue
+            if caminho.is_file():
+                caminho.unlink()
+
+
+
+def montar_logos_por_painel(logos_copiados: list[Path]) -> dict[int, str]:
+    """Converte os logos copiados para caminhos que o navegador consegue abrir."""
+    logos_por_painel: dict[int, str] = {}
+    for logo in logos_copiados:
+        painel = PAINEL_POR_LOGO_GERADO.get(logo.stem)
+        if painel is not None:
+            logos_por_painel[painel] = logo.resolve().as_uri()
+    return logos_por_painel
 
 def montar_resumo_dos_logos(logos_copiados: list[Path]) -> str:
     """Monta o resumo dos logos copiados para o relatório final."""

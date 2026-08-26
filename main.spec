@@ -9,6 +9,7 @@ a = Analysis(
     binaries=[],
     datas=[
         (str(PASTA_ASSETS), "assets"),
+        ("config", "config"),
     ],
     hiddenimports=[],
     hookspath=[],

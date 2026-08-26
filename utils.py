@@ -10,7 +10,7 @@ from pathlib import Path
 
 def pasta_projeto() -> Path:
     """
-    Retorna a pasta raiz do projeto.
+    Retorna a pasta raiz do projeto (diretório do executável ou do código-fonte).
     """
 
     if getattr(sys, "frozen", False):
@@ -19,20 +19,42 @@ def pasta_projeto() -> Path:
     return Path(__file__).resolve().parent
 
 
+def pasta_recursos() -> Path:
+    """
+    Retorna a pasta onde os recursos empacotados (assets, config) estão acessíveis.
+
+    No executável gerado pelo PyInstaller (onedir/COLLECT), os datas ficam em
+    _internal/ — apontado por sys._MEIPASS. Em desenvolvimento, é a raiz do projeto.
+    """
+    if getattr(sys, "frozen", False):
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
+
+    return Path(__file__).resolve().parent
+
+
 def caminho_assets() -> Path:
     """
     Retorna a pasta assets.
     """
-
-    return pasta_projeto() / "assets"
+    return pasta_recursos() / "assets"
 
 
 def caminho_output() -> Path:
     """
-    Retorna a pasta output.
-    """
+    Retorna a pasta onde os arquivos gerados são salvos.
 
-    return pasta_projeto() / "output"
+    Empacotado, usa Documentos do usuário (mesma lógica de
+    pasta_dados_usuario) — escrever dentro da pasta de instalação pode
+    falhar por permissão (ex: Program Files), e escrever dentro de
+    _internal misturaria dado gerado com recurso empacotado, somente leitura.
+    """
+    if getattr(sys, "frozen", False):
+        pasta = Path.home() / "Documents" / "Pascom Live Manager" / "output"
+    else:
+        pasta = pasta_projeto() / "output"
+
+    pasta.mkdir(parents=True, exist_ok=True)
+    return pasta
 
 def pasta_dados_usuario() -> Path:
     """
