@@ -10,7 +10,7 @@ from pathlib import Path
 
 def pasta_projeto() -> Path:
     """
-    Retorna a pasta raiz do projeto.
+    Retorna a pasta raiz do projeto (diretório do executável ou do código-fonte).
     """
 
     if getattr(sys, "frozen", False):
@@ -19,16 +19,24 @@ def pasta_projeto() -> Path:
     return Path(__file__).resolve().parent
 
 
-def caminho_assets() -> Path:
+def pasta_recursos() -> Path:
     """
-    Retorna a pasta assets — recurso empacotado pelo PyInstaller.
+    Retorna a pasta onde os recursos empacotados (assets, config) estão acessíveis.
 
-    Rodando como .exe, assets fica dentro de _internal/, não ao lado do
-    executável — por isso usa sys._MEIPASS aqui, não pasta_projeto().
+    No executável gerado pelo PyInstaller (onedir/COLLECT), os datas ficam em
+    _internal/ — apontado por sys._MEIPASS. Em desenvolvimento, é a raiz do projeto.
     """
     if getattr(sys, "frozen", False):
-        return Path(sys._MEIPASS) / "assets"
-    return pasta_projeto() / "assets"
+        return Path(sys._MEIPASS)  # type: ignore[attr-defined]
+
+    return Path(__file__).resolve().parent
+
+
+def caminho_assets() -> Path:
+    """
+    Retorna a pasta assets.
+    """
+    return pasta_recursos() / "assets"
 
 
 def caminho_output() -> Path:

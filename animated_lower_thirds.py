@@ -14,13 +14,14 @@ from buscar_liturgia import (
     extrair_citacao,
     extrair_citacao_do_salmo,
 )
+from utils import pasta_recursos
 
 QUANTIDADE_MAXIMA_DE_PAINEIS = 4
 QUANTIDADE_MAXIMA_DE_SLOTS = 10
 PAINEL_TITULO = 1
 PAINEL_LEITURAS = 2
 PAINEL_PIX = 3
-CAMINHO_CONFIG_BASE = Path(__file__).parent / "config" / "animated_lower_thirds_base.json"
+CAMINHO_CONFIG_BASE = pasta_recursos() / "config" / "animated_lower_thirds_base.json"
 
 @dataclass(frozen=True)
 class LowerThird:
